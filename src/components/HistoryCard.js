@@ -4,7 +4,19 @@ import { Fonts } from '../constants/Fonts'
 import { TouchableOpacity } from 'react-native'
 import { AppColors } from '../constants/Colors'
 
-const HistoryCard = ({ taskNo, navigation, customerName, storeName, date, time }) => {
+const HistoryCard = ({
+    taskNo,
+    navigation,
+    customerName,
+    storeName,
+    date,
+    time,
+    paymentType,
+    amount,
+    kilometers,
+    deliveryAddress,
+    pickupAddress
+}) => {
 
     return (
         <TouchableOpacity onPress={() => navigation.navigate("Details", {
@@ -13,7 +25,12 @@ const HistoryCard = ({ taskNo, navigation, customerName, storeName, date, time }
             "customerName": customerName,
             "storeName": storeName,
             "date": date,
-            "time": time
+            "time": time,
+            "paymentType": paymentType,
+            "amount": amount,
+            "kilometers": kilometers,
+            "deliveryAddress": deliveryAddress,
+            "pickupAddress": pickupAddress
         })} style={styles.orderContainer}>
             <View style={styles.orderTitleView}>
                 <View style={{

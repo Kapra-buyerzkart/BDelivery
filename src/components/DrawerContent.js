@@ -21,6 +21,7 @@ import { AppColors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import firestore from '@react-native-firebase/firestore';
+import { useSelector } from 'react-redux';
 // import { db } from '../services/firebase';
 
 
@@ -46,38 +47,41 @@ const DrawerContent = ({ navigation, closeDrawer }) => {
     //     navigation.navigate('WalletScreen');
     // };
 
-    const fetchData = async () => {
-        try {
-            const id = await AsyncStorage.getItem('id');
-            if (!id) {
-                console.error('No id found');
-                return;
-            }
-            setId(id);
+    // const fetchData = async () => {
+    //     try {
+    //         const id = await AsyncStorage.getItem('id');
+    //         if (!id) {
+    //             console.error('No id found');
+    //             return;
+    //         }
+    //         setId(id);
 
-            const usersDoc = await firestore().collection('deliveryAgents').doc(id).get();
-            if (usersDoc.exists) {
-                const agentName = usersDoc.data()?.name || ' ';
-                const agentPhone = usersDoc.data()?.mobile || ' ';
-                setName(agentName);
-                setPhoneNumber(agentPhone);
-            } else {
-                console.warn('No such document found for this phone number.');
-            }
-        } catch (error) {
-            console.error('Error fetching data:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    //         const usersDoc = await firestore().collection('deliveryAgents').doc(id).get();
+    //         if (usersDoc.exists) {
+    //             const agentName = usersDoc.data()?.name || ' ';
+    //             const agentPhone = usersDoc.data()?.mobile || ' ';
+    //             setName(agentName);
+    //             setPhoneNumber(agentPhone);
+    //         } else {
+    //             console.warn('No such document found for this phone number.');
+    //         }
+    //     } catch (error) {
+    //         console.error('Error fetching data:', error);
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
 
-    useEffect(() => {
-        fetchData();
-    }, []);
+    // useEffect(() => {
+    //     fetchData();
+    // }, []);
 
     const toggleDutyStatus = () => {
         setIsOnDuty(previousState => !previousState);
     };
+
+    const agent = useSelector((state) => state.agent);
+
 
     return (
         <SafeAreaView style={styles.drawerContent}>
@@ -88,24 +92,24 @@ const DrawerContent = ({ navigation, closeDrawer }) => {
                 showTitle={true}
                 title={'ERROR'}
             />
-            {loading ? (
+            {/* {loading ? (
                 <ActivityIndicator
                     style={styles.loaderStyle}
                     size={'small'}
                     color={AppColors.primaryColor}
                 />
-            ) : (
-                <View style={styles.profileView}>
-                    <Image
-                        style={styles.image}
-                        source={require('../assets/images/logo.png')}
-                    />
-                    <View style={styles.subView}>
-                        <Text style={styles.nameText}>{name}</Text>
-                        <Text style={[styles.nameText, { marginTop: 5 }]}>{phoneNumber}</Text>
-                    </View>
+            ) : ( */}
+            <View style={styles.profileView}>
+                <Image
+                    style={styles.image}
+                    source={require('../assets/images/logo.png')}
+                />
+                <View style={styles.subView}>
+                    <Text style={styles.nameText}>{agent.name}</Text>
+                    <Text style={[styles.nameText, { marginTop: 5 }]}>{agent.mobile}</Text>
                 </View>
-            )}
+            </View>
+            {/* )} */}
 
             {/* ON DUTY Switch */}
             {/* <View style={styles.dutyStatusContainer}>

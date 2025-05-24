@@ -4,29 +4,19 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { AppColors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
 
-const TaskDetailsScreen = ({ navigation }) => {
-    const taskData = {
-        taskNumber: 'ORD1996141890',
-        customerName: 'Customer One',
-        deliveryAddress: {
-            addressLineOne: 'Address Line One',
-            addressLineTwo: 'Address Line Two',
-            addressLineThree: 'Palarivattom',
-            pincode: '682025',
-        },
-        storeName: 'Microstore 01, Vennala',
-        pickupAddress: {
-            addressLineOne: '2nd floor, Nandhanam Tower',
-            addressLineTwo: 'Kaniyapilly Rd',
-            addressLineThree: 'Chakkaraparambu, Vennala',
-            pincode: '682028',
-        },
-        paymentType: 'COD',
-        amount: '₹200.00',
-        kilometers: '100 km',
-        date: '13 May 2025',
-        time: '11:00 AM',
-    };
+const TaskDetailsScreen = ({ navigation, route }) => {
+    const {
+        taskNo,
+        customerName,
+        deliveryAddress,
+        storeName,
+        pickupAddress,
+        paymentType,
+        amount,
+        kilometers,
+        date,
+        time,
+    } = route.params
 
     const renderAddress = (address) => (
         <>
@@ -48,20 +38,20 @@ const TaskDetailsScreen = ({ navigation }) => {
             </View>
 
             <ScrollView contentContainerStyle={styles.content}>
-                <Section title="Task Number" value={taskData.taskNumber} />
-                <Section title="Customer Name" value={taskData.customerName} />
+                <Section title="Task Number" value={taskNo} />
+                <Section title="Customer Name" value={customerName} />
                 <Section title="Delivery Address">
-                    {renderAddress(taskData.deliveryAddress)}
+                    {renderAddress(deliveryAddress)}
                 </Section>
-                <Section title="Store Name" value={taskData.storeName} />
+                <Section title="Store Name" value={storeName} />
                 <Section title="Pickup Address">
-                    {renderAddress(taskData.pickupAddress)}
+                    {renderAddress(pickupAddress)}
                 </Section>
-                <Section title="Payment Type" value={taskData.paymentType} />
-                <Section title="Amount" value={taskData.amount} />
-                <Section title="Kilometers Covered" value={taskData.kilometers} />
-                <Section title="Date" value={taskData.date} />
-                <Section title="Time" value={taskData.time} />
+                <Section title="Payment Type" value={paymentType} />
+                <Section title="Amount" value={amount} />
+                <Section title="Kilometers Covered" value={kilometers} />
+                <Section title="Date" value={date} />
+                <Section title="Time" value={time} />
             </ScrollView>
         </SafeAreaView>
     );

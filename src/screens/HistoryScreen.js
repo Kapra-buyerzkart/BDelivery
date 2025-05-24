@@ -12,67 +12,39 @@ import EmptyComponent from '../components/EmptyComponent';
 import HistoryCard from '../components/HistoryCard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import firestore from '@react-native-firebase/firestore';
+import { useSelector } from 'react-redux';
 
 const HistoryScreen = ({ navigation }) => {
 
-    const [agentId, setAgentId] = useState(null);
-    const [completedTasks, setCompletedTasks] = useState(null);
+    // useEffect(() => {
+    //     const fetchData = async () => {
+    //         try {
+    //             const id = await AsyncStorage.getItem('id');
+    //             console.log('id', id);
+    //             setAgentId(id);
 
+    //             if (id) {
+    //                 const agentDoc = await firestore().collection('deliveryAgents').doc(id).get();
+    //                 if (agentDoc.exists) {
+    //                     const completedTasks = agentDoc.data()?.completedOrders || ' ';
+    //                     setCompletedTasks(completedTasks);
+    //                 } else {
+    //                     console.warn('No such document found for this ID.');
+    //                 }
+    //             }
+    //         } catch (error) {
+    //             console.error('Error fetching data:', error);
+    //         }
+    //     };
 
-    const [orders, setOrders] = useState([
-        {
-            id: 1,
-            order_no: 'ORD1996141890',
-            earnings: '1800.0',
-            collection: '1100.0'
-        },
-        {
-            id: 2,
-            order_no: 'ORD1996141891',
-            earnings: '1200.0',
-            collection: '1100.0'
-        },
-        {
-            id: 3,
-            order_no: 'ORD1996141892',
-            earnings: '1200.0',
-            collection: '1100.0'
-        },
-        {
-            id: 4,
-            order_no: 'ORD1996141893',
-            earnings: '1200.0',
-            collection: '1100.0'
-        }
-    ]);
+    //     fetchData();
+    // }, []);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const id = await AsyncStorage.getItem('id');
-                console.log('id', id);
-                setAgentId(id);
+    const agent = useSelector((state) => state.agent);
 
-                if (id) {
-                    const agentDoc = await firestore().collection('deliveryAgents').doc(id).get();
-                    if (agentDoc.exists) {
-                        const completedTasks = agentDoc.data()?.completedOrders || ' ';
-                        setCompletedTasks(completedTasks);
-                    } else {
-                        console.warn('No such document found for this ID.');
-                    }
-                }
-            } catch (error) {
-                console.error('Error fetching data:', error);
-            }
-        };
-
-        fetchData();
-    }, []);
 
     return (
         <SafeAreaView style={styles.container}>
-            {console.log("ssss", completedTasks)}
             <View style={styles.topView}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <MaterialIcons name="arrow-back" size={24} color={AppColors.whiteColor} />
@@ -84,7 +56,7 @@ const HistoryScreen = ({ navigation }) => {
             </View>
 
             <FlatList
-                data={completedTasks}
+                data={agent.completedOrders}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
                     <HistoryCard
@@ -94,6 +66,11 @@ const HistoryScreen = ({ navigation }) => {
                         storeName={item.storeName}
                         date={item.date}
                         time={item.time}
+                        paymentType={item.paymentType}
+                        amount={item.amount}
+                        kilometers={item.kilometers}
+                        deliveryAddress={item.deliveryAddress}
+                        pickupAddress={item.pickupAddress}
                     />
                 )}
                 ListEmptyComponent={<EmptyComponent text='NO ORDERS' />}

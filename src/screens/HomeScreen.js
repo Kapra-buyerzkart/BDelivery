@@ -16,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoaderComponent from '../components/LoaderComponent';
 import { useDispatch, useSelector } from 'react-redux';
 import { setTasks } from '../redux/actions/taskAction';
+import { fetchAgentDetails } from '../redux/slices/agentSlice';
 
 const HomeScreen = ({ route, navigation }) => {
 
@@ -91,6 +92,11 @@ const HomeScreen = ({ route, navigation }) => {
         loadDutyStatus();
     }, []);
 
+    const dispatch = useDispatch();
+    
+    useEffect(() => {
+        dispatch(fetchAgentDetails()); // Replace with real ID
+    }, [dispatch]);
 
     return (
         <Drawer
