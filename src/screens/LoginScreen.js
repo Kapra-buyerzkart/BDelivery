@@ -1,4 +1,5 @@
-import React, { useContext, useState } from 'react';
+// LoginScreen.js
+import React, { useContext, useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -7,21 +8,24 @@ import {
     StyleSheet,
     Dimensions,
     SafeAreaView,
-    Platform,
+    Vibration,
 } from 'react-native';
 import { AppColors } from '../constants/Colors';
+import { auth, db } from '../services/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Entypo from 'react-native-vector-icons/Entypo';
 import AlertComponent from '../components/AlertComponent';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoaderComponent from '../components/LoaderComponent';
+// import { ItemContext } from '../context/ItemContext';
 import { Fonts } from '../constants/Fonts';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/Container';
-
+import firestore from '@react-native-firebase/firestore';
 
 const { width } = Dimensions.get('window');
 
-const LoginScreen = ({ navigation }) => {
+const LoginScreen = props => {
     const [mobileNo, setMobileNo] = useState('');
     const [password, setPassword] = useState('');
     const [passwordVisible, setPasswordVisible] = useState(false);
@@ -33,6 +37,42 @@ const LoginScreen = ({ navigation }) => {
     const [showPwdEmptyAlert, setShowPwdEmptyAlert] = useState(false);
     const [showMobnoAndPwdEmptyAlert, setShowMobnoAndPwdEmptyAlert] =
         useState(false);
+
+    // const { phoneNumber, setPhoneNumber } = useContext(ItemContext);
+
+    const loginWithPhoneAndPassword = async () => {
+        setLoading(true);
+        try {
+            const usersQuerySnapshot = await firestore()
+                .collection('deliveryAgents')
+                .where('mobile', '==', mobileNo)
+                .get();
+
+            if (!usersQuerySnapshot.empty) {
+                const userDoc = usersQuerySnapshot.docs[0]; // Assuming mobileNo is unique
+                const userData = userDoc.data();
+
+                if (userData.password === password) {
+                    await AsyncStorage.setItem('isLoggedIn', JSON.stringify(true));
+                    await AsyncStorage.setItem('id', userData.id);
+                    // setPhoneNumber(mobileNo);
+                    props.navigation.replace('Home');
+                } else {
+                    setShowPasswordIncorrectAlert(true);
+                }
+            } else {
+                setShowUserNotExistAlert(true);
+            }
+        } catch (error) {
+            console.error('Error logging in:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return <LoaderComponent />;
+    }
 
     return (
         <SafeAreaView style={styles.container}>
@@ -102,9 +142,16 @@ const LoginScreen = ({ navigation }) => {
             <TouchableOpacity
                 style={styles.button}
                 onPress={() => {
-                    navigation.navigate("Home")
-                }}
-            >
+                    if (mobileNo && password) {
+                        loginWithPhoneAndPassword();
+                    } else if (!mobileNo && password) {
+                        setShowMobileNoEmptyAlert(true);
+                    } else if (!password && mobileNo) {
+                        setShowPwdEmptyAlert(true);
+                    } else if (!mobileNo && !password) {
+                        setShowMobnoAndPwdEmptyAlert(true);
+                    }
+                }}>
                 <Text style={styles.buttonText}>Login</Text>
             </TouchableOpacity>
         </SafeAreaView>

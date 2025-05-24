@@ -9,18 +9,30 @@ import { StyleSheet } from 'react-native';
 const AddressCard = (props) => {
 
     const onAccept = () => {
-        props.navigation.navigate("Map")
+        props.navigation.navigate("Map", {
+            // latitude: props.task.latitude,
+            // longitude: props.task.longitude,
+            heading: props.addressHeading,
+            address: props.address,
+            name: props.name,
+            type: props.type,
+            taskId: props.taskId,
+            amount: props.amount,
+            taskNo: props.taskNo
+        })
     }
 
     return (
         <View style={styles.card}>
+            {console.log("PROPS.TASK", props.task)}
             <View style={{
             }}>
                 <Text style={styles.cardHeading}>{props.addressHeading}</Text>
                 <Text style={styles.addressText}>{props.name}</Text>
-                <Text style={styles.addressText}>{props.addressLineOne}</Text>
-                <Text style={styles.addressText}>{props.addressLineTwo}</Text>
-                <Text style={styles.addressText}>{props.addressLineThree}</Text>
+                <Text style={styles.addressText}>{props.address.addressLineOne}</Text>
+                <Text style={styles.addressText}>{props.address.addressLineTwo}</Text>
+                <Text style={styles.addressText}>{props.address.addressLineThree}</Text>
+                <Text style={styles.addressText}>{props.address.pincode}</Text>
             </View>
             <View style={{
                 flexDirection: 'row',
@@ -31,18 +43,18 @@ const AddressCard = (props) => {
                     padding: 10,
                     backgroundColor: AppColors.green,
                     borderRadius: 5,
-                    width: '36%',
+                    width: '27%',
                     alignItems: 'center',
                 }}>
                     <Text style={{
                         color: AppColors.whiteColor,
                         // fontWeight: 'bold',
-                        fontSize: 13,
+                        fontSize: 11,
                         fontFamily: Fonts.OpenSansBold,
 
                     }}>Accept</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={{
+                {/* <TouchableOpacity style={{
                     padding: 10,
                     backgroundColor: AppColors.red,
                     borderRadius: 5,
@@ -52,11 +64,11 @@ const AddressCard = (props) => {
                     <Text style={{
                         color: AppColors.whiteColor,
                         // fontWeight: 'bold',
-                        fontSize: 13,
+                        fontSize: 10,
                         fontFamily: Fonts.OpenSansBold,
 
                     }}>Decline</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
             </View>
         </View>
     )
@@ -66,15 +78,17 @@ const styles = StyleSheet.create({
     card: {
         backgroundColor: AppColors.whiteColor,
         paddingVertical: 12,
-        marginHorizontal: 35,
+        paddingHorizontal: 15,
+        // marginHorizontal: 35,
+        marginVertical: 10,
+        height: 200, // fixed height
+        width: 300,  // fixed width
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 2,
         elevation: 4,
         borderRadius: 8,
-        paddingHorizontal: 15,
-        marginVertical: 10
     },
     cardHeading: {
         color: AppColors.black,

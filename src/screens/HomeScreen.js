@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Button, StyleSheet, SafeAreaView, FlatList, Switch, Platform } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/Container';
@@ -10,61 +10,28 @@ import Entypo from 'react-native-vector-icons/Entypo';
 import { Fonts } from '../constants/Fonts';
 import OrderCard from '../components/OrderCard';
 import EmptyComponent from '../components/EmptyComponent';
+import firestore from '@react-native-firebase/firestore';
+import { USE_DEV_FIREBASE } from '@env';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import LoaderComponent from '../components/LoaderComponent';
+import { useDispatch, useSelector } from 'react-redux';
+import { setTasks } from '../redux/actions/taskAction';
 
 const HomeScreen = ({ route, navigation }) => {
 
+    const [loading, setLoading] = useState(false)
+
     const [isOnDuty, setIsOnDuty] = useState(false); // State for the switch
 
-    const [orders, setOrders] = useState([
-        {
-            id: 1,
-            order_no: 'S0-00917'
-        },
-        {
-            id: 2,
-            order_no: 'S0-00918'
-        },
-        {
-            id: 3,
-            order_no: 'S0-00919'
-        },
-        {
-            id: 4,
-            order_no: 'S0-00920'
-        },
-        {
-            id: 5,
-            order_no: 'S0-00921'
-        },
-        {
-            id: 6,
-            order_no: 'S0-00922'
-        },
-        {
-            id: 7,
-            order_no: 'S0-00923'
-        },
-        {
-            id: 8,
-            order_no: 'S0-00924'
-        },
-        {
-            id: 9,
-            order_no: 'S0-00925'
-        },
-        {
-            id: 10,
-            order_no: 'S0-00926'
-        },
-        {
-            id: 11,
-            order_no: 'S0-00927'
-        },
-    ]);
+    const [orders, setOrders] = useState([]);
 
-    const onDecline = (id) => {
-        setOrders(orders.filter((order) => order.id !== id));
-    }
+    // const dispatch = useDispatch();
+    // const taskState = useSelector(state => state.taskState)
+    // const orders = useSelector(state => state.taskState.tasks);
+
+    // const onDecline = (id) => {
+    //     setOrders(orders.filter((order) => order.id !== id));
+    // }
 
     const drawerRef = useRef(null);
 
@@ -80,11 +47,50 @@ const HomeScreen = ({ route, navigation }) => {
         }
     };
 
-    const toggleDutyStatus = () => {
-        setIsOnDuty(previousState => !previousState);
+    const toggleDutyStatus = async () => {
+        try {
+            const newStatus = !isOnDuty;
+            setIsOnDuty(newStatus);
+            await AsyncStorage.setItem('isOnDuty', JSON.stringify(newStatus));
+        } catch (error) {
+            console.error('Failed to save duty status to AsyncStorage:', error);
+        }
     };
+    // console.log('ppppp', Platform.Version)
 
-    console.log('ppppp',Platform.Version)
+    useEffect(() => {
+        setLoading(true)
+        const unsubscribe = firestore()
+            .collection('tasks')
+            .where('deliveryCompleted', '==', false)
+            .onSnapshot(snapshot => {
+                const newOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setOrders(newOrders.reverse()); // Update your state
+                // dispatch(setTasks(newOrders.reverse()));
+                setLoading(false)
+            }, error => {
+                console.error("Error fetching orders:", error);
+                setLoading(false); // Also stop loading on error
+            });
+
+        return () => unsubscribe(); // Clean up
+    }, []);
+
+    useEffect(() => {
+        const loadDutyStatus = async () => {
+            try {
+                const value = await AsyncStorage.getItem('isOnDuty');
+                if (value !== null) {
+                    setIsOnDuty(JSON.parse(value));
+                }
+            } catch (error) {
+                console.error('Failed to load duty status from AsyncStorage:', error);
+            }
+        };
+
+        loadDutyStatus();
+    }, []);
+
 
     return (
         <Drawer
@@ -100,15 +106,13 @@ const HomeScreen = ({ route, navigation }) => {
         //   main: { opacity: (2 - ratio) / 2 },
         // })}
         >
+            {/* {console.log("taskState", taskState)} */}
             <SafeAreaView style={styles.container}>
                 <View style={styles.topView}>
                     <TouchableOpacity onPress={openDrawer}>
                         <Entypo name="menu" size={33} color={AppColors.whiteColor} />
                     </TouchableOpacity>
                     <Text style={styles.ordersText}>ORDERS</Text>
-                    {/* <TouchableOpacity style={styles.hideStyle} onPress={openDrawer}>
-            <Entypo name="menu" size={33} color={AppColors.whiteColor} />
-          </TouchableOpacity> */}
                     <View style={styles.switchView}>
                         <Text style={styles.switchText}>ON DUTY</Text>
                         <Switch
@@ -119,14 +123,32 @@ const HomeScreen = ({ route, navigation }) => {
                         />
                     </View>
                 </View>
-                <FlatList
-                    data={orders}
-                    keyExtractor={(item) => item.id.toString()}
-                    renderItem={({ item }) => (
-                        <OrderCard order_no={item.order_no} onDecline={() => onDecline(item.id)} navigation={navigation} />
-                    )}
-                    ListEmptyComponent={<EmptyComponent text='NO ORDERS' />}
-                />
+                {loading ? (
+                    <LoaderComponent />
+                ) : (
+                    <>
+                        {isOnDuty ? (
+                            <FlatList
+                                data={orders}
+                                keyExtractor={(item) => item.id.toString()}
+                                renderItem={({ item }) => (
+                                    <OrderCard
+                                        task_no={item.taskNo}
+                                        // onDecline={() => onDecline(item.id)}
+                                        navigation={navigation}
+                                        id={item.id}
+                                    />
+                                )}
+                                ListEmptyComponent={<EmptyComponent text='NO ORDERS' />}
+                            />
+
+                        ) : (
+                            <View style={styles.noDutyView}>
+                                <Text style={styles.noDutyText}>You are not on duty right now.</Text>
+                            </View>
+                        )}
+                    </>
+                )}
             </SafeAreaView>
         </Drawer>
     );
@@ -170,6 +192,16 @@ const styles = StyleSheet.create({
         fontFamily: Fonts.OpenSansBold,
         fontSize: 14
     },
+    noDutyView: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center"
+    },
+    noDutyText: {
+        fontSize: 15,
+        fontFamily: Fonts.OpenSansSemiBold,
+        color: AppColors.black
+    }
 });
 
 const drawerStyles = {

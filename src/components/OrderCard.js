@@ -4,7 +4,7 @@ import { Fonts } from '../constants/Fonts'
 import { TouchableOpacity } from 'react-native'
 import { AppColors } from '../constants/Colors'
 
-const OrderCard = ({ order_no, onDecline, navigation }) => {
+const OrderCard = ({ task_no, onDecline, navigation, id }) => {
 
     return (
         <View style={styles.orderContainer}>
@@ -19,7 +19,7 @@ const OrderCard = ({ order_no, onDecline, navigation }) => {
                         { fontFamily: Fonts.OpenSansBold },
                     ]}>
                     {' '}
-                    {order_no}
+                    {task_no}
                 </Text>
             </View>
             <View style={styles.buttonRow}>
@@ -28,17 +28,18 @@ const OrderCard = ({ order_no, onDecline, navigation }) => {
                         styles.button,
                     ]}
                     onPress={() => navigation.navigate("Task", {
-                        orderNo: order_no
+                        taskNo: task_no,
+                        taskId: id
                     })}
                 >
                     <Text style={styles.buttonText}>Accept</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
+                {/* <TouchableOpacity
                     style={[styles.button, { backgroundColor: AppColors.red }]}
                     onPress={onDecline}
                 >
                     <Text style={styles.buttonText}>Decline</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
             </View>
         </View>
     )

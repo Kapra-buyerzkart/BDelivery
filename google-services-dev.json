@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "959806247625",
+    "project_id": "bdeliverydev",
+    "storage_bucket": "bdeliverydev.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:959806247625:android:ac23288ff8ad6952357318",
+        "android_client_info": {
+          "package_name": "com.bdelivery"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7eLFhDxCaIfP6PAGgGuqM9F7MuLGfw-Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -2,6 +2,8 @@
 import React, { useEffect } from 'react'
 import Container from './src/navigation/Container'
 import { LogBox } from 'react-native';
+import { Provider } from 'react-redux';
+// import store from './src/redux/store';
 
 const App = () => {
 
@@ -13,7 +15,9 @@ const App = () => {
   }, []);
 
   return (
-    <Container />
+    // <Provider store={store}>
+      <Container />
+    // </Provider>
   )
 }
 

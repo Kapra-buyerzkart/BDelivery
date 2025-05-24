@@ -1,5 +1,5 @@
 import { View, Text, SafeAreaView, StyleSheet } from 'react-native'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { AppColors } from '../constants/Colors'
 import { TouchableOpacity } from 'react-native'
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -9,100 +9,91 @@ import { RootStackParamList } from '../navigation/Container';
 import { RouteProp } from '@react-navigation/native';
 import { FlatList } from 'react-native';
 import EmptyComponent from '../components/EmptyComponent';
-import WalletCard from '../components/HistoryCard';
+import HistoryCard from '../components/HistoryCard';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import firestore from '@react-native-firebase/firestore';
 
-const WalletScreen = ({ navigation }) => {
+const HistoryScreen = ({ navigation }) => {
+
+    const [agentId, setAgentId] = useState(null);
+    const [completedTasks, setCompletedTasks] = useState(null);
 
 
     const [orders, setOrders] = useState([
         {
             id: 1,
-            order_no: 'S0-00917',
+            order_no: 'ORD1996141890',
             earnings: '1800.0',
             collection: '1100.0'
         },
         {
             id: 2,
-            order_no: 'S0-00918',
+            order_no: 'ORD1996141891',
             earnings: '1200.0',
             collection: '1100.0'
         },
         {
             id: 3,
-            order_no: 'S0-00919',
+            order_no: 'ORD1996141892',
             earnings: '1200.0',
             collection: '1100.0'
         },
         {
             id: 4,
-            order_no: 'S0-00920',
+            order_no: 'ORD1996141893',
             earnings: '1200.0',
             collection: '1100.0'
-        },
-        {
-            id: 5,
-            order_no: 'S0-00921',
-            earnings: '1200.0',
-            collection: '1100.0'
-        },
-        {
-            id: 6,
-            order_no: 'S0-00922',
-            earnings: '1200.0',
-            collection: '1100.0'
-        },
-        {
-            id: 7,
-            order_no: 'S0-00923',
-            earnings: '1200.0',
-            collection: '1100.0'
-        },
-        {
-            id: 8,
-            order_no: 'S0-00924',
-            earnings: '1200.0',
-            collection: '1100.0'
-        },
-        {
-            id: 9,
-            order_no: 'S0-00925',
-            earnings: '1200.0',
-            collection: '1100.0'
-        },
-        {
-            id: 10,
-            order_no: 'S0-00926',
-            earnings: '1200.0',
-            collection: '1100.0'
-        },
-        {
-            id: 11,
-            order_no: 'S0-00927',
-            earnings: '1200.0',
-            collection: '1100.0'
-        },
+        }
     ]);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const id = await AsyncStorage.getItem('id');
+                console.log('id', id);
+                setAgentId(id);
+
+                if (id) {
+                    const agentDoc = await firestore().collection('deliveryAgents').doc(id).get();
+                    if (agentDoc.exists) {
+                        const completedTasks = agentDoc.data()?.completedOrders || ' ';
+                        setCompletedTasks(completedTasks);
+                    } else {
+                        console.warn('No such document found for this ID.');
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        };
+
+        fetchData();
+    }, []);
 
     return (
         <SafeAreaView style={styles.container}>
+            {console.log("ssss", completedTasks)}
             <View style={styles.topView}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <MaterialIcons name="arrow-back" size={24} color={AppColors.whiteColor} />
                 </TouchableOpacity>
-                <Text style={styles.ordersText}>WALLET</Text>
+                <Text style={styles.ordersText}>HISTORY</Text>
                 <TouchableOpacity style={styles.hideStyle}>
                     <MaterialIcons name="arrow-back" size={24} color={AppColors.whiteColor} />
                 </TouchableOpacity>
             </View>
 
             <FlatList
-                data={orders}
-                keyExtractor={(item) => item.id.toString()}
+                data={completedTasks}
+                keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                    <WalletCard
-                        order_no={item.order_no}
-                        earnings={item.earnings}
-                        collection={item.collection}
+                    <HistoryCard
+                        taskNo={item.taskNumber}
+                        navigation={navigation}
+                        customerName={item.customerName}
+                        storeName={item.storeName}
+                        date={item.date}
+                        time={item.time}
                     />
                 )}
                 ListEmptyComponent={<EmptyComponent text='NO ORDERS' />}
@@ -178,4 +169,4 @@ const styles = StyleSheet.create({
     },
 })
 
-export default WalletScreen
+export default HistoryScreen
