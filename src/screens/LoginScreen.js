@@ -101,7 +101,7 @@ const LoginScreen = props => {
                 message={'Please enter Mobile number and Password'}
                 okClick={() => setShowMobnoAndPwdEmptyAlert(false)}
             />
-            <Text style={styles.title}>Login</Text>
+            <Text style={styles.title}>B-Delivery</Text>
 
             <View style={styles.inputContainer}>
                 <TextInput
@@ -115,7 +115,7 @@ const LoginScreen = props => {
                 <Entypo
                     name="mobile"
                     size={24}
-                    color={AppColors.darkGray}
+                    color={AppColors.darkBlue}
                     style={styles.icon}
                 />
             </View>
@@ -133,7 +133,7 @@ const LoginScreen = props => {
                     <MaterialIcons
                         name={passwordVisible ? 'visibility' : 'visibility-off'}
                         size={24}
-                        color={AppColors.darkGray}
+                        color={AppColors.darkBlue}
                         style={styles.icon}
                     />
                 </TouchableOpacity>
@@ -163,21 +163,21 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         paddingHorizontal: width * 0.1,
-        backgroundColor: AppColors.appBackgroundColor,
+        backgroundColor: AppColors.primaryColor,
     },
     title: {
         fontSize: 17,
         // fontWeight: 'bold',
         marginBottom: 20,
         textAlign: 'center',
-        color: AppColors.black,
+        color: AppColors.whiteColor,
         fontFamily: Fonts.OpenSansBold,
     },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderColor: AppColors.primaryColor,
-        borderWidth: 1,
+        borderColor: AppColors.darkBlue,
+        borderWidth: 2,
         borderRadius: 5,
         marginBottom: 15,
         backgroundColor: AppColors.whiteColor,
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
     },
     button: {
-        backgroundColor: AppColors.primaryColor,
+        backgroundColor: AppColors.darkBlue,
         paddingVertical: 15,
         borderRadius: 5,
         alignItems: 'center',

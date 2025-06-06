@@ -17,11 +17,12 @@ import LoaderComponent from '../components/LoaderComponent';
 import { useDispatch, useSelector } from 'react-redux';
 import { setTasks } from '../redux/actions/taskAction';
 import { fetchAgentDetails } from '../redux/slices/agentSlice';
+// import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const HomeScreen = ({ route, navigation }) => {
 
     const [loading, setLoading] = useState(false)
-
+    const [agentId, setAgentId] = useState(null)
     const [isOnDuty, setIsOnDuty] = useState(false); // State for the switch
 
     const [orders, setOrders] = useState([]);
@@ -47,56 +48,100 @@ const HomeScreen = ({ route, navigation }) => {
             drawerRef.current.close();
         }
     };
-
-    const toggleDutyStatus = async () => {
-        try {
-            const newStatus = !isOnDuty;
-            setIsOnDuty(newStatus);
-            await AsyncStorage.setItem('isOnDuty', JSON.stringify(newStatus));
-        } catch (error) {
-            console.error('Failed to save duty status to AsyncStorage:', error);
-        }
-    };
     // console.log('ppppp', Platform.Version)
 
+    const agent = useSelector((state) => state.agent);
+
+    // console.log("agggg", agent)
+
+    // useEffect(() => {
+    //     const fetchAgentId = async () => {
+    //         const id = await AsyncStorage.getItem('id');
+    //         setAgentId(id);
+    //     };
+    //     fetchAgentId();
+    // }, []);
+
     useEffect(() => {
-        setLoading(true)
+        console.log('Agent from Redux:', agent);
+    }, [agent]);
+
+    useEffect(() => {
+        setLoading(true);
         const unsubscribe = firestore()
             .collection('tasks')
             .where('deliveryCompleted', '==', false)
             .onSnapshot(snapshot => {
-                const newOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setOrders(newOrders.reverse()); // Update your state
-                // dispatch(setTasks(newOrders.reverse()));
-                setLoading(false)
+                const fetchedOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                // Filter orders by storeId matching agent's storeId
+                const filteredOrders = agent?.storeId
+                    ? fetchedOrders.filter(order => order.storeId === agent.storeId)
+                    : [];
+                console.log('filteredOrders', filteredOrders)
+                setOrders(filteredOrders.reverse());
+                setLoading(false);
             }, error => {
                 console.error("Error fetching orders:", error);
-                setLoading(false); // Also stop loading on error
+                setLoading(false);
             });
 
-        return () => unsubscribe(); // Clean up
-    }, []);
+        return () => unsubscribe();
+    }, [agent?.storeId]);
+
 
     useEffect(() => {
         const loadDutyStatus = async () => {
+            // if (!agentId) return;
+            console.log('agentIduf', agentId)
+
             try {
-                const value = await AsyncStorage.getItem('isOnDuty');
-                if (value !== null) {
-                    setIsOnDuty(JSON.parse(value));
+                const doc = await firestore()
+                    .collection('deliveryAgents')
+                    .doc(agent.agentId)
+                    .get();
+
+                if (doc.exists) {
+                    const data = doc.data();
+                    if (data?.onDuty !== undefined) {
+                        setIsOnDuty(data.onDuty);
+                    }
+                } else {
+                    console.warn('No such document found for agentId:', agent.agentId);
                 }
             } catch (error) {
-                console.error('Failed to load duty status from AsyncStorage:', error);
+                console.error('Failed to load duty status from Firestore:', error);
             }
         };
 
         loadDutyStatus();
-    }, []);
+    }, [agent.agentId]);
 
     const dispatch = useDispatch();
-    
+
     useEffect(() => {
         dispatch(fetchAgentDetails()); // Replace with real ID
     }, [dispatch]);
+
+    const toggleDutyStatus = async () => {
+        console.log("ggg", agent.agentId)
+        try {
+            const newStatus = !isOnDuty;
+            setIsOnDuty(newStatus);
+
+            // Update Firestore
+            await firestore()
+                .collection('deliveryAgents')
+                .doc(agent.agentId)
+                .update({
+                    onDuty: newStatus,
+                });
+
+            console.log('Duty status updated in Firestore:', newStatus);
+        } catch (error) {
+            console.error('Failed to update duty status in Firestore:', error);
+        }
+    };
 
     return (
         <Drawer
@@ -112,18 +157,23 @@ const HomeScreen = ({ route, navigation }) => {
         //   main: { opacity: (2 - ratio) / 2 },
         // })}
         >
-            {/* {console.log("taskState", taskState)} */}
             <SafeAreaView style={styles.container}>
+                {console.log("loading", loading)}
                 <View style={styles.topView}>
                     <TouchableOpacity onPress={openDrawer}>
                         <Entypo name="menu" size={33} color={AppColors.whiteColor} />
                     </TouchableOpacity>
                     <Text style={styles.ordersText}>ORDERS</Text>
                     <View style={styles.switchView}>
-                        <Text style={styles.switchText}>ON DUTY</Text>
+                        <Text style={[styles.switchText, isOnDuty ?
+                            { color: AppColors.green } :
+                            { color: AppColors.red }
+                        ]}>ON DUTY</Text>
                         <Switch
-                            trackColor={{ false: '#767577', true: '#81b0ff' }}
-                            thumbColor={isOnDuty ? '#f5dd4b' : '#f4f3f4'}
+                            // trackColor={{ false: '#767577', true: '#81b0ff' }}
+                            // thumbColor={isOnDuty ? '#f5dd4b' : '#f4f3f4'}
+                            trackColor={{ false: AppColors.lightRed, true: AppColors.lightGreen }}
+                            thumbColor={isOnDuty ? AppColors.green : AppColors.red}
                             onValueChange={toggleDutyStatus}
                             value={isOnDuty}
                         />
@@ -178,7 +228,7 @@ const styles = StyleSheet.create({
     // },
     switchText: {
         fontSize: 10,
-        color: AppColors.orange,
+        color: AppColors.red,
         fontFamily: Fonts.OpenSansExtraBold
     },
     topView: {

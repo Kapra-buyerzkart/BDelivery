@@ -1,6 +1,14 @@
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView } from 'react-native';
+import {
+    View,
+    Text,
+    StyleSheet,
+    SafeAreaView,
+    TouchableOpacity,
+    ScrollView,
+} from 'react-native';
 import React from 'react';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import MapView, { Polyline, Marker } from 'react-native-maps';
 import { AppColors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
 
@@ -16,7 +24,9 @@ const TaskDetailsScreen = ({ navigation, route }) => {
         kilometers,
         date,
         time,
-    } = route.params
+        routeCoordinates // Expected as array of { latitude: number, longitude: number }
+    } = route.params;
+
 
     const renderAddress = (address) => (
         <>
@@ -27,8 +37,27 @@ const TaskDetailsScreen = ({ navigation, route }) => {
         </>
     );
 
+    const getInitialRegion = () => {
+        if (routeCoordinates.length > 0) {
+            const { latitude, longitude } = routeCoordinates[0];
+            return {
+                latitude,
+                longitude,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+            };
+        }
+        return {
+            latitude: 0,
+            longitude: 0,
+            latitudeDelta: 0.1,
+            longitudeDelta: 0.1,
+        };
+    };
+
     return (
         <SafeAreaView style={styles.container}>
+            {console.log("routeCoordinates", routeCoordinates)}
             <View style={styles.topView}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <MaterialIcons name="arrow-back" size={24} color={AppColors.whiteColor} />
@@ -37,16 +66,28 @@ const TaskDetailsScreen = ({ navigation, route }) => {
                 <View style={styles.hideStyle} />
             </View>
 
+            {routeCoordinates?.length > 0 && (
+                <MapView style={styles.map} initialRegion={getInitialRegion()}>
+                    <Polyline
+                        coordinates={routeCoordinates}
+                        strokeColor="#007bff"
+                        strokeWidth={4}
+                    />
+                    <Marker coordinate={routeCoordinates[0]} title="Start" pinColor='blue' />
+                    <Marker
+                        coordinate={routeCoordinates[routeCoordinates.length - 1]}
+                        title="End"
+                        pinColor='red'
+                    />
+                </MapView>
+            )}
+
             <ScrollView contentContainerStyle={styles.content}>
                 <Section title="Task Number" value={taskNo} />
                 <Section title="Customer Name" value={customerName} />
-                <Section title="Delivery Address">
-                    {renderAddress(deliveryAddress)}
-                </Section>
+                <Section title="Delivery Address">{renderAddress(deliveryAddress)}</Section>
                 <Section title="Store Name" value={storeName} />
-                <Section title="Pickup Address">
-                    {renderAddress(pickupAddress)}
-                </Section>
+                <Section title="Pickup Address">{renderAddress(pickupAddress)}</Section>
                 <Section title="Payment Type" value={paymentType} />
                 <Section title="Amount" value={amount} />
                 <Section title="Kilometers Covered" value={kilometers} />
@@ -57,13 +98,21 @@ const TaskDetailsScreen = ({ navigation, route }) => {
     );
 };
 
-const Section = ({ title, value, children }) => (
-    <View style={styles.section}>
-        <Text style={styles.label}>{title}</Text>
-        {value && <Text style={styles.value}>{value}</Text>}
-        {children}
-    </View>
-);
+const Section = ({ title, value, children }) => {
+    const parsedValue = Number(value);
+
+    return (
+        <View style={styles.section}>
+            <Text style={styles.label}>{title}</Text>
+            {!isNaN(parsedValue) ? (
+                <Text style={styles.value}>{parsedValue.toFixed(2)}</Text>
+            ) : value ? (
+                <Text style={styles.value}>{value}</Text>
+            ) : null}
+            {children}
+        </View>
+    );
+};
 
 const styles = StyleSheet.create({
     container: {
@@ -87,8 +136,13 @@ const styles = StyleSheet.create({
     hideStyle: {
         width: 24,
     },
+    map: {
+        height: 200,
+        margin: 16,
+        borderRadius: 10,
+    },
     content: {
-        padding: 16,
+        paddingHorizontal: 16,
         paddingBottom: 32,
     },
     section: {

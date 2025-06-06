@@ -33,10 +33,20 @@ const DrawerContent = ({ navigation, closeDrawer }) => {
     const [isOnDuty, setIsOnDuty] = useState(false); // State for the switch
     const [id, setId] = useState(null);
 
+    const agent = useSelector((state) => state.agent);
+    console.log('redid', agent.agentId)
     const handleLogout = async () => {
         try {
+            await firestore()
+                .collection('deliveryAgents')
+                .doc(agent.agentId)
+                .update({
+                    onDuty: false,
+                });
+
             await AsyncStorage.removeItem('isLoggedIn');
-            await AsyncStorage.removeItem('isOnDuty');
+            await AsyncStorage.removeItem('id');
+            // await AsyncStorage.removeItem('isOnDuty');
             navigation.replace("Login")
         } catch (error) {
             console.error('Error during logout:', error);
@@ -80,7 +90,6 @@ const DrawerContent = ({ navigation, closeDrawer }) => {
         setIsOnDuty(previousState => !previousState);
     };
 
-    const agent = useSelector((state) => state.agent);
 
 
     return (

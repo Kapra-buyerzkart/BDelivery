@@ -36,6 +36,7 @@ const agentSlice = createSlice({
         name: '',
         password: '',
         storeName: '',
+        storeId: '',
         type: '',
         completedOrders: [],
         status: 'idle',
@@ -48,6 +49,7 @@ const agentSlice = createSlice({
             state.name = '';
             state.password = '';
             state.storeName = '';
+            state.storeId = '';
             state.type = '';
             state.completedOrders = [];
             state.status = 'idle';
@@ -66,8 +68,10 @@ const agentSlice = createSlice({
                 state.name = data.name;
                 state.password = data.password;
                 state.storeName = data.storeName;
+                state.storeId = data.storeId;
                 state.type = data.type;
                 state.completedOrders = data.completedOrders || [];
+                state.agentId = data.id
             })
             .addCase(fetchAgentDetails.rejected, (state, action) => {
                 state.status = 'failed';

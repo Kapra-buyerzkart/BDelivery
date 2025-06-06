@@ -13,23 +13,25 @@ const EarningsScreen = ({ navigation }) => {
     const [agentId, setAgentId] = useState(null);
     const [earnings, setEarnings] = useState({ distance: 0, tasks: 0, amount: 0 });
 
-    useEffect(() => {
-        const fetchAgentId = async () => {
-            const id = await AsyncStorage.getItem('id');
-            setAgentId(id);
-        };
-        fetchAgentId();
-    }, []);
+    // useEffect(() => {
+    //     const fetchAgentId = async () => {
+    //         const id = await AsyncStorage.getItem('id');
+    //         setAgentId(id);
+    //     };
+    //     fetchAgentId();
+    // }, []);
+
+    const agent = useSelector((state) => state.agent);
 
     useEffect(() => {
-        if (agentId && selectedRange.startDate && selectedRange.endDate) {
+        if (agent.agentId && selectedRange.startDate && selectedRange.endDate) {
             fetchEarnings();
         }
-    }, [selectedRange, agentId]);
+    }, [selectedRange, agent.agentId]);
 
     const fetchEarnings = async () => {
         try {
-            const doc = await firestore().collection('deliveryAgents').doc(agentId).get();
+            const doc = await firestore().collection('deliveryAgents').doc(agent.agentId).get();
             const data = doc.data();
             if (!data?.completedOrders) return;
 

@@ -12,18 +12,31 @@ import { useDispatch } from "react-redux";
 import { updateTask } from "../redux/actions/taskAction";
 import firestore from '@react-native-firebase/firestore';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import useLocationTracking from "../hooks/useLocationTracking";
+import TaskCompletedModal from "../components/TaskCompletedModal";
+import dayjs from 'dayjs';
 
-const App = ({ navigation }) => {
+const MapScreen = ({ navigation }) => {
     const [currentLocation, setCurrentLocation] = useState(null);
     const [navigationCompleted, setNavigationCompleted] = useState(false);
     const [loading, setLoading] = useState(true);
     const [agentId, setAgentId] = useState(null);
     const [taskData, setTaskData] = useState(null);
+    const [startClicked, setStartClicked] = useState(false);
+    const [modalVisible, setModalVisible] = useState(false);
 
     const route = useRoute();
     const dispatch = useDispatch();
 
     const { heading, address, name, type, taskId, amount, taskNo } = route.params;
+    const [deliveryStarted, setDeliveryStarted] = useState(false);
+
+    const { distanceTravelled, routeCoordinates } = useLocationTracking(
+        taskId,
+        heading,
+        deliveryStarted,
+        agentId
+    );
 
     const destination = {
         latitude: parseFloat(address.latitude),
@@ -119,6 +132,7 @@ const App = ({ navigation }) => {
         if (currentLocation) {
             const url = `https://www.google.com/maps/dir/?api=1&origin=${currentLocation.latitude},${currentLocation.longitude}&destination=${destination.latitude},${destination.longitude}`;
             Linking.openURL(url);
+            // setDeliveryStarted(true)
         }
     };
 
@@ -166,16 +180,17 @@ const App = ({ navigation }) => {
                     },
                     paymentType: type,
                     amount: amount,
-                    kilometers: null,
-                    date: null,
-                    time: null,
+                    // kilometers: null,
+                    // date: null,
+                    // time: null,
                 });
 
                 transaction.set(agentRef, { completedOrders: updatedOrders }, { merge: true });
             });
 
             console.log('completedOrders updated successfully');
-            navigation.goBack()
+            setModalVisible(true)
+            // navigation.goBack()
         } catch (error) {
             console.error('Error updating pickupCompleted:', error);
         }
@@ -185,9 +200,14 @@ const App = ({ navigation }) => {
         try {
             await firestore().collection('tasks').doc(taskId).update({
                 deliveryCompleted: status,
+                kiolmeters: distanceTravelled,
             });
             console.log('deliveryCompleted updated successfully');
             const agentRef = firestore().collection('deliveryAgents').doc(agentId);
+            const now = dayjs();
+            const dateStr = now.format('DD, MMMM YYYY');
+            const timeStr = now.format('hh:mm A');
+            console.log('timeStr', timeStr)
             await firestore().runTransaction(async transaction => {
                 const agentDoc = await transaction.get(agentRef);
 
@@ -207,9 +227,12 @@ const App = ({ navigation }) => {
                         addressLineTwo: address.addressLineTwo,
                         addressLineThree: address.addressLineThree,
                         pincode: address.pincode,
+                        date: dateStr,
+                        time: timeStr,
                     };
 
                     updatedOrders[index].customerName = name
+                    updatedOrders[index].kilometers = distanceTravelled;
 
                     transaction.set(agentRef, { completedOrders: updatedOrders }, { merge: true });
                 } else {
@@ -218,7 +241,8 @@ const App = ({ navigation }) => {
             });
 
             console.log('deliveryAddress updated successfully in completedOrders');
-            navigation.navigate("Home")
+            setModalVisible(true)
+            // navigation.navigate("Home")
         } catch (error) {
             console.error('Error updating deliveryCompleted:', error);
         }
@@ -228,12 +252,27 @@ const App = ({ navigation }) => {
         <View style={styles.container}>
             {/* {console.log("curr", currentLocation)}
             {console.log("dest", destination)} */}
+            {console.log('deliveryStarted', deliveryStarted)}
             {console.log("agentId", agentId)}
+            {console.log("dist", distanceTravelled)}
+            {console.log('route', routeCoordinates)}
+            {console.log('currentLocation', currentLocation)}
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                 <MaterialIcons name="arrow-back" size={24} color={AppColors.whiteColor} />
             </TouchableOpacity>
             {loading ? (<LoaderComponent />) : (
                 <>
+                    <TaskCompletedModal
+                        visible={modalVisible}
+                        onClose={() => {
+                            setModalVisible(false)
+                            { heading === "Pickup Address" ? navigation.goBack() : navigation.navigate("Home") }
+
+                        }}
+                        taskNo={taskNo}
+                        totalKm={distanceTravelled}
+                        task={heading === "Pickup Address" ? "Pick Up" : "Delivery"}
+                    />
                     {currentLocation && (
                         <MapView
                             style={styles.map}
@@ -284,14 +323,38 @@ const App = ({ navigation }) => {
                             <Text style={styles.codText}>Amount: {amount}</Text>
                         )}
                         <TouchableOpacity
-                            style={styles.completeButtonView}
-                            onPress={heading === "Pickup Address" ?
-                                () => updatePickupCompleted(taskId, true) :
-                                () => updateDeliveryCompleted(taskId, true)
+                            style={startClicked ?
+                                [styles.completeButtonView, { backgroundColor: AppColors.blue }] :
+                                [styles.completeButtonView, {
+                                    backgroundColor: AppColors.green
+
+                                }]
                             }
+                            // onPress={heading === "Pickup Address" ?
+                            //     () => {
+                            //         updatePickupCompleted(taskId, true)
+                            //     } :
+                            //     () => {
+                            //         updateDeliveryCompleted(taskId, true)
+                            //     }
+                            // }
+                            // onPress={() => setStartClicked(true)}
+                            onPress={() => {
+                                if (!startClicked && heading === "Pickup Address") {
+                                    setStartClicked(true)
+                                } else if (!startClicked && heading === "Delivery Address") {
+                                    setStartClicked(true)
+                                    setDeliveryStarted(true)
+                                } else if (startClicked && heading === "Pickup Address") {
+                                    updatePickupCompleted(taskId, true)
+                                } else if (startClicked && heading === "Delivery Address") {
+                                    setDeliveryStarted(false)
+                                    updateDeliveryCompleted(taskId, true)
+                                }
+                            }}
                         >
                             <Text style={styles.completeButtonText}>
-                                Complete
+                                {startClicked ? 'Complete' : 'Start'}
                             </Text>
                         </TouchableOpacity>
 
@@ -356,7 +419,7 @@ const styles = StyleSheet.create({
         fontSize: 15
     },
     completeButtonView: {
-        backgroundColor: AppColors.blue,
+        // backgroundColor: AppColors.blue,
         padding: 10,
         alignItems: 'center',
         // justifyContent: 'center',
@@ -370,4 +433,4 @@ const styles = StyleSheet.create({
     }
 });
 
-export default App;
+export default MapScreen;

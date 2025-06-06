@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     buttonText: {
-        color: AppColors.whiteColor,
+        color: 'white',
         // fontWeight: 'bold',
         fontSize: 13,
         fontFamily: Fonts.OpenSansBold,

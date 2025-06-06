@@ -47,7 +47,7 @@ const AddressCard = (props) => {
                     alignItems: 'center',
                 }}>
                     <Text style={{
-                        color: AppColors.whiteColor,
+                        color: 'white',
                         // fontWeight: 'bold',
                         fontSize: 11,
                         fontFamily: Fonts.OpenSansBold,

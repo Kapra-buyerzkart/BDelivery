@@ -15,7 +15,8 @@ const HistoryCard = ({
     amount,
     kilometers,
     deliveryAddress,
-    pickupAddress
+    pickupAddress,
+    routeCoordinates
 }) => {
 
     return (
@@ -30,16 +31,17 @@ const HistoryCard = ({
             "amount": amount,
             "kilometers": kilometers,
             "deliveryAddress": deliveryAddress,
-            "pickupAddress": pickupAddress
+            "pickupAddress": pickupAddress,
+            "routeCoordinates": routeCoordinates
         })} style={styles.orderContainer}>
             <View style={styles.orderTitleView}>
                 <View style={{
-                    flex: 3,
+                    flex: 1,
                 }}>
                     <Text style={[styles.orderTitle, { textAlign: "right" }]}>Task No:</Text>
                 </View>
                 <View style={{
-                    flex: 4,
+                    flex: 1,
                     paddingLeft: 10
                 }}>
                     <Text
@@ -54,12 +56,12 @@ const HistoryCard = ({
 
             <View style={styles.orderTitleView}>
                 <View style={{
-                    flex: 3,
+                    flex: 1,
                 }}>
                     <Text style={[styles.orderTitle, { textAlign: "right" }]}>Customer Name:</Text>
                 </View>
                 <View style={{
-                    flex: 4,
+                    flex: 1,
                     paddingLeft: 10
                 }}>
                     <Text
@@ -74,12 +76,12 @@ const HistoryCard = ({
 
             <View style={styles.orderTitleView}>
                 <View style={{
-                    flex: 3,
+                    flex: 1,
                 }}>
                     <Text style={[styles.orderTitle, { textAlign: "right" }]}>Store Name:</Text>
                 </View>
                 <View style={{
-                    flex: 4,
+                    flex: 1,
                     paddingLeft: 10
                 }}>
                     <Text
@@ -94,12 +96,12 @@ const HistoryCard = ({
 
             <View style={styles.orderTitleView}>
                 <View style={{
-                    flex: 3,
+                    flex: 1,
                 }}>
                     <Text style={[styles.orderTitle, { textAlign: "right" }]}>Date:</Text>
                 </View>
                 <View style={{
-                    flex: 4,
+                    flex: 1,
                     paddingLeft: 10
                 }}>
                     <Text
@@ -113,12 +115,12 @@ const HistoryCard = ({
             </View>
             <View style={styles.orderTitleView}>
                 <View style={{
-                    flex: 3,
+                    flex: 1,
                 }}>
                     <Text style={[styles.orderTitle, { textAlign: "right" }]}>Time:</Text>
                 </View>
                 <View style={{
-                    flex: 4,
+                    flex: 1,
                     paddingLeft: 10
                 }}>
                     <Text

@@ -42,7 +42,7 @@ const HistoryScreen = ({ navigation }) => {
 
     const agent = useSelector((state) => state.agent);
 
-
+    console.log('redid2', agent)
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.topView}>
@@ -64,13 +64,14 @@ const HistoryScreen = ({ navigation }) => {
                         navigation={navigation}
                         customerName={item.customerName}
                         storeName={item.storeName}
-                        date={item.date}
-                        time={item.time}
+                        date={item.deliveryAddress.date}
+                        time={item.deliveryAddress.time}
                         paymentType={item.paymentType}
                         amount={item.amount}
                         kilometers={item.kilometers}
                         deliveryAddress={item.deliveryAddress}
                         pickupAddress={item.pickupAddress}
+                        routeCoordinates={item.routeCoordinates}
                     />
                 )}
                 ListEmptyComponent={<EmptyComponent text='NO ORDERS' />}
