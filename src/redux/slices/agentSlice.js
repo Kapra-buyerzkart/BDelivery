@@ -10,6 +10,7 @@ export const fetchAgentDetails = createAsyncThunk(
         try {
             // Get agentId from AsyncStorage
             const agentId = await AsyncStorage.getItem('id');
+            console.log("fetchAgentDetails calling....")
             if (!agentId) {
                 throw new Error('Agent ID not found in storage');
             }

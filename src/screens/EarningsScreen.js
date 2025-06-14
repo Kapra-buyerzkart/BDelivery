@@ -7,6 +7,7 @@ import { Fonts } from '../constants/Fonts';
 import firestore from '@react-native-firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import moment from 'moment';
+import { useSelector } from 'react-redux';
 
 const EarningsScreen = ({ navigation }) => {
     const [selectedRange, setSelectedRange] = useState({});
@@ -22,31 +23,42 @@ const EarningsScreen = ({ navigation }) => {
     // }, []);
 
     const agent = useSelector((state) => state.agent);
+    console.log("AgentEear", agent)
 
     useEffect(() => {
-        if (agent.agentId && selectedRange.startDate && selectedRange.endDate) {
-            fetchEarnings();
+        if (agent.agentId) {
+            if (selectedRange.startDate && selectedRange.endDate) {
+                fetchEarnings(selectedRange.startDate, selectedRange.endDate);
+            } else {
+                fetchEarnings(); // Fetch lifetime data initially
+            }
         }
     }, [selectedRange, agent.agentId]);
 
-    const fetchEarnings = async () => {
+    const fetchEarnings = async (startDate = null, endDate = null) => {
         try {
             const doc = await firestore().collection('deliveryAgents').doc(agent.agentId).get();
             const data = doc.data();
             if (!data?.completedOrders) return;
 
-            const tasks = data.completedOrders.filter(task => {
-                const taskDate = moment(task.date, 'DD MMM YYYY');
-                return taskDate.isBetween(
-                    moment(selectedRange.startDate),
-                    moment(selectedRange.endDate),
-                    undefined,
-                    '[]'
-                );
-            });
+            let tasks = data.completedOrders;
+
+            if (startDate && endDate) {
+                tasks = tasks.filter(task => {
+                    const taskDate = moment(task.deliveryAddress.date, 'DD MMM YYYY');
+                    return taskDate.isBetween(
+                        moment(startDate),
+                        moment(endDate),
+                        undefined,
+                        '[]'
+                    );
+                });
+            }
 
             const totalDistance = tasks.reduce((sum, task) => sum + parseFloat(task.kilometers), 0);
-            const totalAmount = tasks.reduce((sum, task) => sum + parseFloat(task.amount.replace(/[^0-9.-]+/g, '')), 0);
+            const totalAmount = tasks.reduce((sum, task) =>
+                sum + parseFloat(task.amount?.toString().replace(/[^0-9.-]+/g, '') || 0), 0
+            );
 
             setEarnings({ distance: totalDistance, tasks: tasks.length, amount: totalAmount });
         } catch (err) {
@@ -97,6 +109,29 @@ const EarningsScreen = ({ navigation }) => {
                 />
 
                 <View style={styles.earningsContainer}>
+                    {selectedRange.startDate && selectedRange.endDate ? (
+                        <View style={{
+                            marginBottom: 10
+                        }}>
+                            <Text style={{
+                                fontSize: 14,
+                                fontFamily: Fonts.OpenSansSemiBold,
+                                color: AppColors.black,
+                            }}>
+                                Showing results from
+                            </Text>
+                            <Text style={styles.value}>{selectedRange.startDate} to {selectedRange.endDate}</Text>
+                        </View>
+                    ) : (
+                        <Text style={{
+                            fontSize: 14,
+                            fontFamily: Fonts.OpenSansSemiBold,
+                            color: AppColors.black,
+                            marginBottom: 10
+                        }}>
+                            Showing lifetime earnings
+                        </Text>
+                    )}
                     <Text style={styles.label}>Total Distance Covered: <Text style={styles.value}>{earnings.distance.toFixed(2)} km</Text></Text>
                     <Text style={styles.label}>Total Tasks Completed: <Text style={styles.value}>{earnings.tasks}</Text></Text>
                     <Text style={styles.label}>Total Earnings: <Text style={styles.value}>₹{earnings.amount.toFixed(2)}</Text></Text>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Geolocation from '@react-native-community/geolocation';
 import firestore from '@react-native-firebase/firestore';
+import dayjs from 'dayjs';
 
 const useLocationTracking = (taskId, heading, deliveryStarted, agentId) => {
     const [distanceTravelled, setDistanceTravelled] = useState(0);
@@ -22,7 +23,7 @@ const useLocationTracking = (taskId, heading, deliveryStarted, agentId) => {
             async (position) => {
                 const { latitude, longitude, accuracy } = position.coords;
                 console.log('accuracy', accuracy)
-                if (accuracy > 20) return;
+                // if (accuracy > 20) return;
                 const timestamp = dayjs().format('DD, MMMM YYYY hh:mm:ss A');
                 const newLatLng = { latitude, longitude, timestamp };
 
@@ -39,6 +40,9 @@ const useLocationTracking = (taskId, heading, deliveryStarted, agentId) => {
                     saveCoordinatesToFirestore(updatedCoords);
                     return updatedCoords;
                 });
+                // const updatedCoords = [...routeCoordinates, newLatLng];
+                // setRouteCoordinates(updatedCoords);
+                // saveCoordinatesToFirestore(updatedCoords);
             },
             (error) => console.log('Location error:', error),
             {

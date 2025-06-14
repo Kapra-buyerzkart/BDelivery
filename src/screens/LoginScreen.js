@@ -22,6 +22,8 @@ import LoaderComponent from '../components/LoaderComponent';
 // import { ItemContext } from '../context/ItemContext';
 import { Fonts } from '../constants/Fonts';
 import firestore from '@react-native-firebase/firestore';
+import { useDispatch } from 'react-redux';
+import { fetchAgentDetails } from '../redux/slices/agentSlice';
 
 const { width } = Dimensions.get('window');
 
@@ -40,6 +42,8 @@ const LoginScreen = props => {
 
     // const { phoneNumber, setPhoneNumber } = useContext(ItemContext);
 
+    const dispatch = useDispatch()
+
     const loginWithPhoneAndPassword = async () => {
         setLoading(true);
         try {
@@ -56,6 +60,7 @@ const LoginScreen = props => {
                     await AsyncStorage.setItem('isLoggedIn', JSON.stringify(true));
                     await AsyncStorage.setItem('id', userData.id);
                     // setPhoneNumber(mobileNo);
+                    // dispatch(fetchAgentDetails())
                     props.navigation.replace('Home');
                 } else {
                     setShowPasswordIncorrectAlert(true);
