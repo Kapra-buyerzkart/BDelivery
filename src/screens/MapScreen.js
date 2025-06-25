@@ -8,7 +8,7 @@ import { Colors } from "react-native/Libraries/NewAppScreen";
 import { Fonts } from "../constants/Fonts";
 import { useRoute } from "@react-navigation/native";
 import LoaderComponent from "../components/LoaderComponent";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { updateTask } from "../redux/actions/taskAction";
 import firestore from '@react-native-firebase/firestore';
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -47,6 +47,8 @@ const MapScreen = ({ navigation }) => {
     //     latitude: 9.97697440146752,
     //     longitude: 76.309760272405,
     // };
+
+    const agentData = useSelector(state => state.agent)
 
     useEffect(() => {
         const requestLocationPermission = async () => {
@@ -198,15 +200,22 @@ const MapScreen = ({ navigation }) => {
 
     const updateDeliveryCompleted = async (taskId, status) => {
         try {
-            await firestore().collection('tasks').doc(taskId).update({
-                deliveryCompleted: status,
-                kiolmeters: distanceTravelled,
-            });
-            console.log('deliveryCompleted updated successfully');
-            const agentRef = firestore().collection('deliveryAgents').doc(agentId);
             const now = dayjs();
             const dateStr = now.format('DD, MMMM YYYY');
             const timeStr = now.format('hh:mm A');
+            await firestore().collection('tasks').doc(taskId).update({
+                deliveryCompleted: status,
+                kiolmeters: distanceTravelled,
+                taskStatus: "completed",
+                deliveryAgent: agentData.name,
+                date: dateStr,
+                time: timeStr,
+            });
+            console.log('deliveryCompleted updated successfully');
+            const agentRef = firestore().collection('deliveryAgents').doc(agentId);
+            // const now = dayjs();
+            // const dateStr = now.format('DD, MMMM YYYY');
+            // const timeStr = now.format('hh:mm A');
             console.log('timeStr', timeStr)
             await firestore().runTransaction(async transaction => {
                 const agentDoc = await transaction.get(agentRef);

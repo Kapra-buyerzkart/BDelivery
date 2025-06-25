@@ -113,22 +113,13 @@ const EarningsScreen = ({ navigation }) => {
                         <View style={{
                             marginBottom: 10
                         }}>
-                            <Text style={{
-                                fontSize: 14,
-                                fontFamily: Fonts.OpenSansSemiBold,
-                                color: AppColors.black,
-                            }}>
+                            <Text style={styles.earningsTextOne}>
                                 Showing results from
                             </Text>
                             <Text style={styles.value}>{selectedRange.startDate} to {selectedRange.endDate}</Text>
                         </View>
                     ) : (
-                        <Text style={{
-                            fontSize: 14,
-                            fontFamily: Fonts.OpenSansSemiBold,
-                            color: AppColors.black,
-                            marginBottom: 10
-                        }}>
+                        <Text style={styles.earningsTextTwo}>
                             Showing lifetime earnings
                         </Text>
                     )}
@@ -193,6 +184,17 @@ const styles = StyleSheet.create({
         fontFamily: Fonts.OpenSansBold,
         color: AppColors.primaryColor,
     },
+    earningsTextOne: {
+        fontSize: 14,
+        fontFamily: Fonts.OpenSansSemiBold,
+        color: AppColors.black,
+    },
+    earningsTextTwo: {
+        fontSize: 14,
+        fontFamily: Fonts.OpenSansSemiBold,
+        color: AppColors.black,
+        marginBottom: 10
+    }
 });
 
 export default EarningsScreen;

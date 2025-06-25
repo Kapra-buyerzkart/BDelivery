@@ -37,6 +37,7 @@ const DrawerContent = ({ navigation, closeDrawer }) => {
     console.log('redid', agent.agentId)
     const handleLogout = async () => {
         try {
+            console.log("11111")
             await firestore()
                 .collection('deliveryAgents')
                 .doc(agent.agentId)
@@ -47,6 +48,7 @@ const DrawerContent = ({ navigation, closeDrawer }) => {
             await AsyncStorage.removeItem('isLoggedIn');
             await AsyncStorage.removeItem('id');
             // await AsyncStorage.removeItem('isOnDuty');
+            console.log("logout")
             navigation.replace("Login")
         } catch (error) {
             console.error('Error during logout:', error);
