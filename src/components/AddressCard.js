@@ -18,7 +18,8 @@ const AddressCard = (props) => {
             type: props.type,
             taskId: props.taskId,
             amount: props.amount,
-            taskNo: props.taskNo
+            taskNo: props.taskNo,
+            storeId: props.storeId
         })
     }
 

@@ -28,7 +28,7 @@ const MapScreen = ({ navigation }) => {
     const route = useRoute();
     const dispatch = useDispatch();
 
-    const { heading, address, name, type, taskId, amount, taskNo } = route.params;
+    const { heading, address, name, type, taskId, amount, taskNo, storeId } = route.params;
     const [deliveryStarted, setDeliveryStarted] = useState(false);
 
     const { distanceTravelled, routeCoordinates } = useLocationTracking(
@@ -99,7 +99,7 @@ const MapScreen = ({ navigation }) => {
     useEffect(() => {
         const fetchAgentId = async () => {
             const id = await AsyncStorage.getItem('id');
-            console.log('id', id)
+            // console.log('id', id)
             setAgentId(id);
         }
         // const fetchTaskData = () => {
@@ -152,7 +152,7 @@ const MapScreen = ({ navigation }) => {
             await firestore().collection('tasks').doc(taskId).update({
                 pickupCompleted: status,
             });
-            console.log('pickupCompleted updated successfully');
+            // console.log('pickupCompleted updated successfully');
             const agentRef = firestore().collection('deliveryAgents').doc(agentId);
             await firestore().runTransaction(async transaction => {
                 const doc = await transaction.get(agentRef);
@@ -190,7 +190,7 @@ const MapScreen = ({ navigation }) => {
                 transaction.set(agentRef, { completedOrders: updatedOrders }, { merge: true });
             });
 
-            console.log('completedOrders updated successfully');
+            // console.log('completedOrders updated successfully');
             setModalVisible(true)
             // navigation.goBack()
         } catch (error) {
@@ -211,12 +211,12 @@ const MapScreen = ({ navigation }) => {
                 date: dateStr,
                 time: timeStr,
             });
-            console.log('deliveryCompleted updated successfully');
+            // console.log('deliveryCompleted updated successfully');
             const agentRef = firestore().collection('deliveryAgents').doc(agentId);
             // const now = dayjs();
             // const dateStr = now.format('DD, MMMM YYYY');
             // const timeStr = now.format('hh:mm A');
-            console.log('timeStr', timeStr)
+            // console.log('timeStr', timeStr)
             await firestore().runTransaction(async transaction => {
                 const agentDoc = await transaction.get(agentRef);
 
@@ -249,11 +249,38 @@ const MapScreen = ({ navigation }) => {
                 }
             });
 
-            console.log('deliveryAddress updated successfully in completedOrders');
+            const storeRef = firestore().collection('stores').doc('stores');
+            const storeDocSnap = await storeRef.get();
+            const storesArray = storeDocSnap.data().stores || [];
+            console.log("storeid", storeId)
+            const updatedStores = storesArray.map(store => {
+                if (store.id === storeId) {
+                    const existingCompletedTasks = store.completedTasks || [];
+                    return {
+                        ...store,
+                        completedTasks: [
+                            ...existingCompletedTasks,
+                            {
+                                taskId: taskId,
+                                taskNo: taskNo,
+                                agentName: agentData.name,
+                                agentId: agentData.agentId
+                            }
+                        ]
+                    };
+                }
+                return store;
+            });
+
+            await storeRef.update({
+                stores: updatedStores
+            });
+
+            // console.log('deliveryAddress updated successfully in completedOrders');
             setModalVisible(true)
             // navigation.navigate("Home")
         } catch (error) {
-            console.error('Error updating deliveryCompleted:', error);
+            // console.error('Error updating deliveryCompleted:', error);
         }
     };
 
@@ -261,11 +288,11 @@ const MapScreen = ({ navigation }) => {
         <View style={styles.container}>
             {/* {console.log("curr", currentLocation)}
             {console.log("dest", destination)} */}
-            {console.log('deliveryStarted', deliveryStarted)}
+            {/* {console.log('deliveryStarted', deliveryStarted)}
             {console.log("agentId", agentId)}
             {console.log("dist", distanceTravelled)}
             {console.log('route', routeCoordinates)}
-            {console.log('currentLocation', currentLocation)}
+            {console.log('currentLocation', currentLocation)} */}
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                 <MaterialIcons name="arrow-back" size={24} color={AppColors.whiteColor} />
             </TouchableOpacity>

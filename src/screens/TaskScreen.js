@@ -79,6 +79,7 @@ const TaskScreen = ({ navigation }) => {
                             taskId={taskId}
                             task={task}
                             taskNo={taskNo}
+                            storeId={task.storeId}
                         />
                     )}
 
@@ -93,6 +94,7 @@ const TaskScreen = ({ navigation }) => {
                         taskId={taskId}
                         task={task}
                         taskNo={taskNo}
+                        storeId={task.storeId}
                     />
                 </>
             ) : (

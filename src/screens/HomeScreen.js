@@ -68,6 +68,7 @@ const HomeScreen = ({ route, navigation }) => {
 
     useEffect(() => {
         setLoading(true);
+        console.log("agent.storeId", agent?.storeId)
         const unsubscribe = firestore()
             .collection('tasks')
             .where('deliveryCompleted', '==', false)
