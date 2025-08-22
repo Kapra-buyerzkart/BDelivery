@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Button, StyleSheet, SafeAreaView, FlatList, Switch, Platform } from 'react-native';
+import { View, Text, Button, StyleSheet, SafeAreaView, FlatList, Switch, Platform, Modal } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/Container';
 import { AppColors } from '../constants/Colors';
@@ -17,6 +17,9 @@ import LoaderComponent from '../components/LoaderComponent';
 import { useDispatch, useSelector } from 'react-redux';
 import { setTasks } from '../redux/actions/taskAction';
 import { fetchAgentDetails } from '../redux/slices/agentSlice';
+import { fetchStoreDetails } from '../redux/slices/storeSlice';
+import { fetchHolidays } from '../redux/slices/holidaysSlice';
+import { fetchIncentives } from '../redux/slices/incentivesSlice';
 // import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const HomeScreen = ({ route, navigation }) => {
@@ -24,16 +27,10 @@ const HomeScreen = ({ route, navigation }) => {
     const [loading, setLoading] = useState(false)
     const [agentId, setAgentId] = useState(null)
     const [isOnDuty, setIsOnDuty] = useState(false); // State for the switch
-
     const [orders, setOrders] = useState([]);
-
-    // const dispatch = useDispatch();
-    // const taskState = useSelector(state => state.taskState)
-    // const orders = useSelector(state => state.taskState.tasks);
-
-    // const onDecline = (id) => {
-    //     setOrders(orders.filter((order) => order.id !== id));
-    // }
+    const [orderAlreadyAccepted, setOrderAlreadyAccepted] = useState(false);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [orderNo, setOrderNo] = useState(null);
 
     const drawerRef = useRef(null);
 
@@ -48,9 +45,16 @@ const HomeScreen = ({ route, navigation }) => {
             drawerRef.current.close();
         }
     };
+
+    const handleOrderAccepted = (value, orderNo) => {
+        setOrderAlreadyAccepted(value)
+        setModalVisible(value)
+        setOrderNo(orderNo)
+    }
     // console.log('ppppp', Platform.Version)
 
     const agent = useSelector((state) => state.agent);
+    const holidays = useSelector((state) => state.holidays)
 
     // console.log("agggg", agent)
 
@@ -122,6 +126,9 @@ const HomeScreen = ({ route, navigation }) => {
 
     useEffect(() => {
         dispatch(fetchAgentDetails()); // Replace with real ID
+        dispatch(fetchStoreDetails());
+        dispatch(fetchHolidays());
+        dispatch(fetchIncentives());
     }, [dispatch]);
 
     const toggleDutyStatus = async () => {
@@ -159,7 +166,26 @@ const HomeScreen = ({ route, navigation }) => {
         // })}
         >
             <SafeAreaView style={styles.container}>
-                {console.log("loading", loading)}
+                {/* {console.log("loading", loading)}
+                {console.log("holidays", holidays)} */}
+                <Modal
+                    transparent={true}
+                    visible={modalVisible}
+                    animationType="fade"
+                    onRequestClose={() => setModalVisible(false)}
+                >
+                    <View style={styles.modalBackground}>
+                        <View style={styles.modalContent}>
+                            <Text style={styles.modalText}>Order <Text style={styles.orderNoText}>{orderNo} </Text>already taken</Text>
+                            <TouchableOpacity
+                                style={styles.okButton}
+                                onPress={() => setModalVisible(false)}
+                            >
+                                <Text style={styles.okButtonText}>OK</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
                 <View style={styles.topView}>
                     <TouchableOpacity onPress={openDrawer}>
                         <Entypo name="menu" size={33} color={AppColors.whiteColor} />
@@ -194,6 +220,7 @@ const HomeScreen = ({ route, navigation }) => {
                                         // onDecline={() => onDecline(item.id)}
                                         navigation={navigation}
                                         id={item.id}
+                                        handleOrderAccepted={handleOrderAccepted}
                                     />
                                 )}
                                 ListEmptyComponent={<EmptyComponent text='NO ORDERS' />}
@@ -258,6 +285,41 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontFamily: Fonts.OpenSansSemiBold,
         color: AppColors.black
+    },
+    modalBackground: {
+        flex: 1,
+        justifyContent: 'center',
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        padding: 20
+    },
+    modalContent: {
+        backgroundColor: AppColors.whiteColor,
+        padding: 25,
+        borderRadius: 10,
+        alignItems: 'center'
+    },
+    modalText: {
+        fontSize: 16,
+        marginBottom: 10,
+        fontFamily: Fonts.OpenSansRegular,
+        color: AppColors.black
+    },
+    okButton: {
+        marginTop: 15,
+        paddingVertical: 10,
+        paddingHorizontal: 25,
+        backgroundColor: AppColors.red,
+        borderRadius: 8
+    },
+    okButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontFamily: Fonts.OpenSansBold
+    },
+    orderNoText: {
+        fontFamily: Fonts.OpenSansBold,
+        color: AppColors.black,
+        fontSize: 17
     }
 });
 

@@ -59,6 +59,7 @@ const LoginScreen = props => {
                 if (userData.password === password) {
                     await AsyncStorage.setItem('isLoggedIn', JSON.stringify(true));
                     await AsyncStorage.setItem('id', userData.id);
+                    await AsyncStorage.setItem('storeId', userData.storeId);
                     // setPhoneNumber(mobileNo);
                     // dispatch(fetchAgentDetails())
                     props.navigation.replace('Home');

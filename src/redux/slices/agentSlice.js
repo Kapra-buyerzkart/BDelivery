@@ -10,7 +10,7 @@ export const fetchAgentDetails = createAsyncThunk(
         try {
             // Get agentId from AsyncStorage
             const agentId = await AsyncStorage.getItem('id');
-            console.log("fetchAgentDetails calling....")
+            // console.log("fetchAgentDetails calling....")
             if (!agentId) {
                 throw new Error('Agent ID not found in storage');
             }
@@ -40,6 +40,7 @@ const agentSlice = createSlice({
         storeId: '',
         type: '',
         completedOrders: [],
+        attendance: [],
         status: 'idle',
         error: null,
     },
@@ -53,6 +54,7 @@ const agentSlice = createSlice({
             state.storeId = '';
             state.type = '';
             state.completedOrders = [];
+            state.attendance = [];
             state.status = 'idle';
             state.error = null;
         },
@@ -73,6 +75,7 @@ const agentSlice = createSlice({
                 state.type = data.type;
                 state.completedOrders = data.completedOrders || [];
                 state.agentId = data.id
+                state.attendance = data.attendance
             })
             .addCase(fetchAgentDetails.rejected, (state, action) => {
                 state.status = 'failed';

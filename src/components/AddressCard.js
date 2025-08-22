@@ -9,6 +9,7 @@ import { StyleSheet } from 'react-native';
 const AddressCard = (props) => {
 
     const onAccept = () => {
+        props.onMapVisited()
         props.navigation.navigate("Map", {
             // latitude: props.task.latitude,
             // longitude: props.task.longitude,
@@ -25,7 +26,7 @@ const AddressCard = (props) => {
 
     return (
         <View style={styles.card}>
-            {console.log("PROPS.TASK", props.task)}
+            {/* {console.log("PROPS.TASK", props.task)} */}
             <View style={{
             }}>
                 <Text style={styles.cardHeading}>{props.addressHeading}</Text>

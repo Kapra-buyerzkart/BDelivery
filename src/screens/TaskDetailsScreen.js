@@ -57,7 +57,7 @@ const TaskDetailsScreen = ({ navigation, route }) => {
 
     return (
         <SafeAreaView style={styles.container}>
-            {console.log("routeCoordinates", routeCoordinates)}
+            {/* {console.log("routeCoordinates", routeCoordinates)} */}
             <View style={styles.topView}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <MaterialIcons name="arrow-back" size={24} color={AppColors.whiteColor} />

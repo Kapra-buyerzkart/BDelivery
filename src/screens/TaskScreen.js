@@ -1,5 +1,5 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import React, { useCallback, useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, AppState } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/Container';
 import { RouteProp, useFocusEffect, useRoute } from '@react-navigation/native';
@@ -37,6 +37,27 @@ const TaskScreen = ({ navigation }) => {
         // }
     };
 
+    const wasMapScreenVisited = useRef(false);
+    const appState = useRef(AppState.currentState);
+    useFocusEffect(
+        useCallback(() => {
+            return () => {
+                if (!wasMapScreenVisited.current) {
+                    firestore()
+                        .collection('tasks')
+                        .doc(taskId)
+                        .update({
+                            selectedByDeliveryAgent: false
+                        });
+                }
+            };
+        }, [])
+    );
+
+    const onMapVisited = () => {
+        wasMapScreenVisited.current = true;
+    };
+
     useFocusEffect(
         useCallback(() => {
             const loadTask = async () => {
@@ -52,6 +73,39 @@ const TaskScreen = ({ navigation }) => {
     // if (loading) {
     //     <LoaderComponent />
     // }
+
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            // When TasksScreen is focused again (e.g., after MapScreen)
+            wasMapScreenVisited.current = false;
+        });
+
+        return unsubscribe;
+    }, [navigation]);
+
+    useEffect(() => {
+        const handleAppStateChange = nextAppState => {
+            if (
+                appState.current === 'active' &&
+                (nextAppState === 'inactive' || nextAppState === 'background')
+            ) {
+                // App going to background → assume exit
+                firestore()
+                    .collection('tasks')
+                    .doc(taskId)
+                    .update({
+                        selectedByDeliveryAgent: false
+                    });
+            }
+            appState.current = nextAppState;
+        };
+
+        const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+        return () => {
+            subscription.remove();
+        };
+    }, []);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -80,7 +134,7 @@ const TaskScreen = ({ navigation }) => {
                             task={task}
                             taskNo={taskNo}
                             storeId={task.storeId}
-                        />
+                            onMapVisited={onMapVisited} />
                     )}
 
                     <AddressCard
@@ -95,7 +149,7 @@ const TaskScreen = ({ navigation }) => {
                         task={task}
                         taskNo={taskNo}
                         storeId={task.storeId}
-                    />
+                        onMapVisited={onMapVisited} />
                 </>
             ) : (
                 <Text style={{ color: 'red', fontSize: 16 }}>Task not found.</Text>

@@ -22,7 +22,7 @@ const useLocationTracking = (taskId, heading, deliveryStarted, agentId) => {
         watchId.current = Geolocation.watchPosition(
             async (position) => {
                 const { latitude, longitude, accuracy } = position.coords;
-                console.log('accuracy', accuracy)
+                // console.log('accuracy', accuracy)
                 // if (accuracy > 20) return;
                 const timestamp = dayjs().format('DD, MMMM YYYY hh:mm:ss A');
                 const newLatLng = { latitude, longitude, timestamp };
@@ -58,7 +58,7 @@ const useLocationTracking = (taskId, heading, deliveryStarted, agentId) => {
     const stopTracking = () => {
         if (watchId.current !== null) {
             Geolocation.clearWatch(watchId.current);
-            console.log("STOP")
+            // console.log("STOP")
             watchId.current = null;
             prevLatLng.current = null;
         }
@@ -76,7 +76,7 @@ const useLocationTracking = (taskId, heading, deliveryStarted, agentId) => {
             Math.sin(dLon / 2) *
             Math.sin(dLon / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        console.log("RRRR", R * c)
+        // console.log("RRRR", R * c)
         return R * c;
     };
 

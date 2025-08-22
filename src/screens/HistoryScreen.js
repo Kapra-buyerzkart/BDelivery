@@ -42,7 +42,7 @@ const HistoryScreen = ({ navigation }) => {
 
     const agent = useSelector((state) => state.agent);
 
-    console.log('redid2', agent)
+    // console.log('redid2', agent)
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.topView}>

@@ -34,10 +34,10 @@ const DrawerContent = ({ navigation, closeDrawer }) => {
     const [id, setId] = useState(null);
 
     const agent = useSelector((state) => state.agent);
-    console.log('redid', agent.agentId)
+    // console.log('redid', agent.agentId)
     const handleLogout = async () => {
         try {
-            console.log("11111")
+            // console.log("11111")
             await firestore()
                 .collection('deliveryAgents')
                 .doc(agent.agentId)
@@ -47,8 +47,9 @@ const DrawerContent = ({ navigation, closeDrawer }) => {
 
             await AsyncStorage.removeItem('isLoggedIn');
             await AsyncStorage.removeItem('id');
+            await AsyncStorage.removeItem('storeId');
             // await AsyncStorage.removeItem('isOnDuty');
-            console.log("logout")
+            // console.log("logout")
             navigation.replace("Login")
         } catch (error) {
             console.error('Error during logout:', error);
@@ -132,7 +133,15 @@ const DrawerContent = ({ navigation, closeDrawer }) => {
                     value={isOnDuty}
                 />
             </View> */}
-
+            <TouchableOpacity onPress={() => {
+                navigation.navigate("Attendance", {
+                    agentId: agent.agentId
+                })
+                closeDrawer()
+            }} style={styles.logOut}>
+                <FontAwesome name={'money'} color={AppColors.primaryColor} size={19} />
+                <Text style={styles.logoutText}>ATTENDANCE</Text>
+            </TouchableOpacity>
             <TouchableOpacity onPress={() => {
                 navigation.navigate("History")
                 closeDrawer()

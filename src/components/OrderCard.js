@@ -1,10 +1,35 @@
 import { View, Text, StyleSheet } from 'react-native'
-import React from 'react'
+import React, { useState } from 'react'
 import { Fonts } from '../constants/Fonts'
 import { TouchableOpacity } from 'react-native'
 import { AppColors } from '../constants/Colors'
+import firestore from '@react-native-firebase/firestore';
 
-const OrderCard = ({ task_no, onDecline, navigation, id }) => {
+const OrderCard = ({ task_no, onDecline, navigation, id, handleOrderAccepted }) => {
+
+    const onAccept = async () => {
+        const docRef = firestore().collection('tasks').doc(id);
+        const docSnap = await docRef.get();
+
+        if (docSnap.exists) {
+            const data = docSnap.data();
+
+            if (data.selectedByDeliveryAgent === true) {
+                handleOrderAccepted(true, task_no)
+                // console.log('Task is already selected by another delivery agent.');
+            } else {
+                // console.log('Task successfully selected by this delivery agent.');
+                await docRef.update({ selectedByDeliveryAgent: true });
+                navigation.navigate("Task", {
+                    taskNo: task_no,
+                    taskId: id
+                })
+            }
+
+        } else {
+            // console.log('Task not found.');
+        }
+    }
 
     return (
         <View style={styles.orderContainer}>
@@ -27,10 +52,7 @@ const OrderCard = ({ task_no, onDecline, navigation, id }) => {
                     style={[
                         styles.button,
                     ]}
-                    onPress={() => navigation.navigate("Task", {
-                        taskNo: task_no,
-                        taskId: id
-                    })}
+                    onPress={onAccept}
                 >
                     <Text style={styles.buttonText}>Accept</Text>
                 </TouchableOpacity>

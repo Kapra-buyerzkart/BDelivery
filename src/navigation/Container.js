@@ -11,6 +11,7 @@ import LoaderComponent from '../components/LoaderComponent';
 import HistoryScreen from '../screens/HistoryScreen';
 import TaskDetailsScreen from '../screens/TaskDetailsScreen';
 import EarningsScreen from '../screens/EarningsScreen';
+import AttendanceScreen from '../screens/AttendanceScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -54,6 +55,9 @@ const Container = () => {
           headerShown: false
         }} />
         <Stack.Screen name="Wallet" component={WalletScreen} options={{
+          headerShown: false
+        }} />
+        <Stack.Screen name="Attendance" component={AttendanceScreen} options={{
           headerShown: false
         }} />
         <Stack.Screen name="History" component={HistoryScreen} options={{

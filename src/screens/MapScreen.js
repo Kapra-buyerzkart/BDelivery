@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View, StyleSheet, PermissionsAndroid, Platform, Button, Linking, TouchableOpacity, Text, AppState, Image } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import Geolocation from "@react-native-community/geolocation";
@@ -49,6 +49,32 @@ const MapScreen = ({ navigation }) => {
     // };
 
     const agentData = useSelector(state => state.agent)
+    const appState = useRef(AppState.currentState);
+
+    useEffect(() => {
+        const handleAppStateChange = nextAppState => {
+            if (
+                appState.current === 'active' &&
+                (nextAppState === 'inactive' || nextAppState === 'background')
+            ) {
+                // App going to background → assume exit
+                firestore()
+                    .collection('tasks')
+                    .doc(taskId)
+                    .update({
+                        accepted: false,
+                        acceptedBy: null
+                    });
+            }
+            appState.current = nextAppState;
+        };
+
+        const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+        return () => {
+            subscription.remove();
+        };
+    }, []);
 
     useEffect(() => {
         const requestLocationPermission = async () => {
@@ -130,6 +156,12 @@ const MapScreen = ({ navigation }) => {
         // fetchTaskData()
     }, [])
 
+    useEffect(() => {
+        firestore().collection('tasks').doc(taskId).update({
+            mapScreenOpened: true  // or mapScreenOpened: true
+        });
+    }, [])
+
     const openGoogleMaps = () => {
         if (currentLocation) {
             const url = `https://www.google.com/maps/dir/?api=1&origin=${currentLocation.latitude},${currentLocation.longitude}&destination=${destination.latitude},${destination.longitude}`;
@@ -201,7 +233,7 @@ const MapScreen = ({ navigation }) => {
     const updateDeliveryCompleted = async (taskId, status) => {
         try {
             const now = dayjs();
-            const dateStr = now.format('DD, MMMM YYYY');
+            const dateStr = now.format('DD MMM YYYY');
             const timeStr = now.format('hh:mm A');
             await firestore().collection('tasks').doc(taskId).update({
                 deliveryCompleted: status,
