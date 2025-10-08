@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
         color: AppColors.whiteColor,
         fontFamily: Fonts.OpenSansSemiBold,
         fontSize: 16,
-    }
+    },
 });
 
 export default MapScreen;

@@ -12,6 +12,12 @@ import HistoryScreen from '../screens/HistoryScreen';
 import TaskDetailsScreen from '../screens/TaskDetailsScreen';
 import EarningsScreen from '../screens/EarningsScreen';
 import AttendanceScreen from '../screens/AttendanceScreen';
+import ChangePwdScreen from '../screens/ChangePwdScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import ForgotPwdScreen from '../screens/ForgotPwdScreen';
+import OtpVerifyScreen from '../screens/OtpVerifyScreen';
+import OrderDetailsScreen from '../screens/OrderDetailsScreen';
+import ResetPwdScreen from '../screens/ResetPwdScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -48,10 +54,28 @@ const Container = () => {
         <Stack.Screen name="Login" component={LoginScreen} options={{
           headerShown: false
         }} />
+        <Stack.Screen name="ForgotPwd" component={ForgotPwdScreen} options={{
+          headerShown: false
+        }} />
+        <Stack.Screen name="OtpVerify" component={OtpVerifyScreen} options={{
+          headerShown: false
+        }} />
+        <Stack.Screen name="ResetPwd" component={ResetPwdScreen} options={{
+          headerShown: false
+        }} />
+        <Stack.Screen name="Profile" component={ProfileScreen} options={{
+          headerShown: false
+        }} />
+        <Stack.Screen name="ChangePwd" component={ChangePwdScreen} options={{
+          headerShown: false
+        }} />
         <Stack.Screen name="Home" component={HomeScreen} options={{
           headerShown: false
         }} />
-        <Stack.Screen name="Task" component={TaskScreen} options={{
+        {/* <Stack.Screen name="Task" component={TaskScreen} options={{
+          headerShown: false
+        }} /> */}
+        <Stack.Screen name="OrderDetails" component={OrderDetailsScreen} options={{
           headerShown: false
         }} />
         <Stack.Screen name="Wallet" component={WalletScreen} options={{

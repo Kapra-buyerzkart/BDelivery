@@ -22,6 +22,7 @@ import { Fonts } from '../constants/Fonts';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import firestore from '@react-native-firebase/firestore';
 import { useSelector } from 'react-redux';
+import { logout } from '../services/api/api';
 // import { db } from '../services/firebase';
 
 
@@ -34,22 +35,24 @@ const DrawerContent = ({ navigation, closeDrawer }) => {
     const [id, setId] = useState(null);
 
     const agent = useSelector((state) => state.agent);
-    // console.log('redid', agent.agentId)
+    console.log('agent', agent)
     const handleLogout = async () => {
         try {
             // console.log("11111")
-            await firestore()
-                .collection('deliveryAgents')
-                .doc(agent.agentId)
-                .update({
-                    onDuty: false,
-                });
+            // await firestore()
+            //     .collection('deliveryAgents')
+            //     .doc(agent.agentId)
+            //     .update({
+            //         onDuty: false,
+            //     });
 
-            await AsyncStorage.removeItem('isLoggedIn');
-            await AsyncStorage.removeItem('id');
-            await AsyncStorage.removeItem('storeId');
+            // await AsyncStorage.removeItem('isLoggedIn');
+            // await AsyncStorage.removeItem('id');
+            // await AsyncStorage.removeItem('storeId');
             // await AsyncStorage.removeItem('isOnDuty');
             // console.log("logout")
+            const res = await logout();
+            AsyncStorage.clear()
             navigation.replace("Login")
         } catch (error) {
             console.error('Error during logout:', error);
@@ -111,16 +114,24 @@ const DrawerContent = ({ navigation, closeDrawer }) => {
                     color={AppColors.primaryColor}
                 />
             ) : ( */}
-            <View style={styles.profileView}>
+            <TouchableOpacity onPress={() => {
+                navigation.navigate("Profile")
+                closeDrawer()
+            }} style={styles.profileView}>
                 <Image
                     style={styles.image}
                     source={require('../assets/images/logo.png')}
                 />
                 <View style={styles.subView}>
                     <Text style={styles.nameText}>{agent.name}</Text>
-                    <Text style={[styles.nameText, { marginTop: 5 }]}>{agent.mobile}</Text>
+                    <Text style={[styles.nameText, { marginTop: 5 }]}>{agent.phoneNo}</Text>
                 </View>
-            </View>
+                <FontAwesome
+                    name={'arrow-right'}
+                    size={20}
+                    colors={AppColors.black}
+                />
+            </TouchableOpacity>
             {/* )} */}
 
             {/* ON DUTY Switch */}
@@ -156,6 +167,17 @@ const DrawerContent = ({ navigation, closeDrawer }) => {
                 <FontAwesome name={'money'} color={AppColors.primaryColor} size={19} />
                 <Text style={styles.logoutText}>EARNINGS</Text>
             </TouchableOpacity>
+            <TouchableOpacity onPress={() => {
+                navigation.navigate("ChangePwd")
+                closeDrawer()
+            }} style={styles.logOut}>
+                <MaterialIcons
+                    name={'password'}
+                    color={AppColors.primaryColor}
+                    size={19}
+                />
+                <Text style={styles.logoutText}>CHANGE PASSWORD</Text>
+            </TouchableOpacity>
             <TouchableOpacity onPress={handleLogout} style={styles.logOut}>
                 <MaterialIcons
                     name={'logout'}
@@ -189,6 +211,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 20,
+        justifyContent: "space-between",
     },
     image: {
         height: 40,
@@ -196,6 +219,7 @@ const styles = StyleSheet.create({
     },
     subView: {
         marginLeft: 10,
+        flex: 1
     },
     nameText: {
         fontSize: 14,

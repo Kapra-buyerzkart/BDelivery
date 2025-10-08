@@ -4,31 +4,53 @@ import { Fonts } from '../constants/Fonts'
 import { TouchableOpacity } from 'react-native'
 import { AppColors } from '../constants/Colors'
 import firestore from '@react-native-firebase/firestore';
+import { modifyOrderStatus } from '../services/api/api'
 
-const OrderCard = ({ task_no, onDecline, navigation, id, handleOrderAccepted }) => {
+const OrderCard = ({ task_no, onDecline, navigation, id, handleOrderAccepted, status, agentId }) => {
 
-    const onAccept = async () => {
-        const docRef = firestore().collection('tasks').doc(id);
-        const docSnap = await docRef.get();
+    // const handleAccept = async () => {
+    //     const docRef = firestore().collection('tasks').doc(id);
+    //     const docSnap = await docRef.get();
 
-        if (docSnap.exists) {
-            const data = docSnap.data();
+    //     if (docSnap.exists) {
+    //         const data = docSnap.data();
 
-            if (data.selectedByDeliveryAgent === true) {
-                handleOrderAccepted(true, task_no)
-                // console.log('Task is already selected by another delivery agent.');
+    //         if (data.selectedByDeliveryAgent === true) {
+    //             handleOrderAccepted(true, task_no)
+    //             // console.log('Task is already selected by another delivery agent.');
+    //         } else {
+    //             // console.log('Task successfully selected by this delivery agent.');
+    //             await docRef.update({ selectedByDeliveryAgent: true });
+    //             navigation.navigate("Task", {
+    //                 taskNo: task_no,
+    //                 taskId: id
+    //             })
+    //         }
+
+    //     } else {
+    //         // console.log('Task not found.');
+    //     }
+    // }
+
+    const handleAccept = async () => {
+        try {
+            const response = await modifyOrderStatus(id, agentId, "Delivery Agent Accepted");
+            if (response.data.Message === "Order Status Updated") {
+                console.log("✅ Success:", response.data.Message);
+                // You can also show a toast or update UI here
             } else {
-                // console.log('Task successfully selected by this delivery agent.');
-                await docRef.update({ selectedByDeliveryAgent: true });
-                navigation.navigate("Task", {
-                    taskNo: task_no,
-                    taskId: id
-                })
+                console.warn("⚠️ Unexpected response:", response.data);
             }
-
-        } else {
-            // console.log('Task not found.');
+        } catch (error) {
+            console.error("❌ Error updating order status:", error);
         }
+    }
+
+    const handleAccepted = () => {
+        navigation.navigate("Task", {
+            taskNo: task_no,
+            taskId: id
+        })
     }
 
     return (
@@ -48,20 +70,20 @@ const OrderCard = ({ task_no, onDecline, navigation, id, handleOrderAccepted }) 
                 </Text>
             </View>
             <View style={styles.buttonRow}>
-                <TouchableOpacity
-                    style={[
-                        styles.button,
-                    ]}
-                    onPress={onAccept}
+                {status === "Delivery Agent Accepted" ? <View
+                    style={[styles.button, { backgroundColor: AppColors.orange }]}
+                    onPress={handleAccepted}
                 >
-                    <Text style={styles.buttonText}>Accept</Text>
-                </TouchableOpacity>
-                {/* <TouchableOpacity
-                    style={[styles.button, { backgroundColor: AppColors.red }]}
-                    onPress={onDecline}
-                >
-                    <Text style={styles.buttonText}>Decline</Text>
-                </TouchableOpacity> */}
+                    <Text style={styles.buttonText}>Accepted</Text>
+                </View>
+                    :
+                    <TouchableOpacity
+                        style={styles.button}
+                        onPress={handleAccept}
+                    >
+                        <Text style={styles.buttonText}>Accept</Text>
+                    </TouchableOpacity>
+                }
             </View>
         </View>
     )

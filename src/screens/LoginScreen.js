@@ -24,6 +24,7 @@ import { Fonts } from '../constants/Fonts';
 import firestore from '@react-native-firebase/firestore';
 import { useDispatch } from 'react-redux';
 import { fetchAgentDetails } from '../redux/slices/agentSlice';
+import { login } from '../services/api/api';
 
 const { width } = Dimensions.get('window');
 
@@ -37,6 +38,7 @@ const LoginScreen = props => {
     const [loading, setLoading] = useState(false);
     const [showMobileNoEmptyAlert, setShowMobileNoEmptyAlert] = useState(false);
     const [showPwdEmptyAlert, setShowPwdEmptyAlert] = useState(false);
+    const [showLoginFailedAlert, setShowLoginFailedAlert] = useState(false);
     const [showMobnoAndPwdEmptyAlert, setShowMobnoAndPwdEmptyAlert] =
         useState(false);
 
@@ -44,37 +46,87 @@ const LoginScreen = props => {
 
     const dispatch = useDispatch()
 
+    // const loginWithPhoneAndPassword = async () => {
+    //     setLoading(true);
+    //     try {
+    //         const usersQuerySnapshot = await firestore()
+    //             .collection('deliveryAgents')
+    //             .where('mobile', '==', mobileNo)
+    //             .get();
+
+    //         if (!usersQuerySnapshot.empty) {
+    //             const userDoc = usersQuerySnapshot.docs[0]; // Assuming mobileNo is unique
+    //             const userData = userDoc.data();
+
+    //             if (userData.password === password) {
+    //                 await AsyncStorage.setItem('isLoggedIn', JSON.stringify(true));
+    //                 await AsyncStorage.setItem('id', userData.id);
+    //                 await AsyncStorage.setItem('storeId', userData.storeId);
+    //                 // setPhoneNumber(mobileNo);
+    //                 // dispatch(fetchAgentDetails())
+    //                 props.navigation.replace('Home');
+    //             } else {
+    //                 setShowPasswordIncorrectAlert(true);
+    //             }
+    //         } else {
+    //             setShowUserNotExistAlert(true);
+    //         }
+    //     } catch (error) {
+    //         console.error('Error logging in:', error);
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
+
     const loginWithPhoneAndPassword = async () => {
         setLoading(true);
         try {
-            const usersQuerySnapshot = await firestore()
-                .collection('deliveryAgents')
-                .where('mobile', '==', mobileNo)
-                .get();
+            // const usersQuerySnapshot = await firestore()
+            //     .collection('deliveryAgents')
+            //     .where('mobile', '==', mobileNo)
+            //     .get();
 
-            if (!usersQuerySnapshot.empty) {
-                const userDoc = usersQuerySnapshot.docs[0]; // Assuming mobileNo is unique
-                const userData = userDoc.data();
-
-                if (userData.password === password) {
-                    await AsyncStorage.setItem('isLoggedIn', JSON.stringify(true));
-                    await AsyncStorage.setItem('id', userData.id);
-                    await AsyncStorage.setItem('storeId', userData.storeId);
-                    // setPhoneNumber(mobileNo);
-                    // dispatch(fetchAgentDetails())
-                    props.navigation.replace('Home');
-                } else {
-                    setShowPasswordIncorrectAlert(true);
-                }
+            const res = await login(mobileNo, password);
+            console.log("res", res.data)
+            if (res.data?.Token) {
+                console.log("1111")
+                await AsyncStorage.setItem("authToken", res.data.Token);
+                await AsyncStorage.setItem("refreshToken", res.data.RefreshToken);
+                await AsyncStorage.setItem("agentId", res.data.AgentId.toString());
+                await AsyncStorage.setItem('isLoggedIn', JSON.stringify(true));
+                props.navigation.replace('Home');
             } else {
-                setShowUserNotExistAlert(true);
+                Alert.alert("Login Failed", res.data?.Message || "Unknown error");
             }
+            // console.log("res", res.data)
+            // if (!usersQuerySnapshot.empty) {
+            //     const userDoc = usersQuerySnapshot.docs[0]; // Assuming mobileNo is unique
+            //     const userData = userDoc.data();
+
+            //     if (userData.password === password) {
+            //         await AsyncStorage.setItem('isLoggedIn', JSON.stringify(true));
+            //         await AsyncStorage.setItem('id', userData.id);
+            //         await AsyncStorage.setItem('storeId', userData.storeId);
+            //         // setPhoneNumber(mobileNo);
+            //         // dispatch(fetchAgentDetails())
+            //         props.navigation.replace('Home');
+            //     } else {
+            //         setShowPasswordIncorrectAlert(true);
+            //     }
+            // } else {
+            //     setShowUserNotExistAlert(true);
+            // }
         } catch (error) {
             console.error('Error logging in:', error);
+            setShowLoginFailedAlert(true)
         } finally {
             setLoading(false);
         }
     };
+
+    const onClickingForgotPwd = () => {
+        props.navigation.navigate("ForgotPwd")
+    }
 
     if (loading) {
         return <LoaderComponent />;
@@ -82,6 +134,11 @@ const LoginScreen = props => {
 
     return (
         <SafeAreaView style={styles.container}>
+            <AlertComponent
+                visible={showLoginFailedAlert}
+                message={'Login Failed'}
+                okClick={() => setShowLoginFailedAlert(false)}
+            />
             <AlertComponent
                 visible={showPasswordIncorrectAlert}
                 message={'Incorrect password'}
@@ -144,7 +201,6 @@ const LoginScreen = props => {
                     />
                 </TouchableOpacity>
             </View>
-
             <TouchableOpacity
                 style={styles.button}
                 onPress={() => {
@@ -160,6 +216,11 @@ const LoginScreen = props => {
                 }}>
                 <Text style={styles.buttonText}>Login</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity onPress={onClickingForgotPwd} style={styles.forgotPwdButtonView}>
+                <Text style={styles.forgotPwdButtonText}>Forgot Password</Text>
+            </TouchableOpacity>
+
         </SafeAreaView>
     );
 };
@@ -212,6 +273,17 @@ const styles = StyleSheet.create({
         // fontWeight: 'bold',
         fontFamily: Fonts.OpenSansBold,
     },
+    forgotPwdButtonView: {
+        justifyContent: "center",
+        alignItems: "flex-end",
+        marginTop: 10,
+    },
+    forgotPwdButtonText: {
+        color: AppColors.whiteColor,
+        fontSize: 13,
+        // fontWeight: 'bold',
+        fontFamily: Fonts.OpenSansBold,
+    }
 });
 
 export default LoginScreen;

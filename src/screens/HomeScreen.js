@@ -20,6 +20,7 @@ import { fetchAgentDetails } from '../redux/slices/agentSlice';
 import { fetchStoreDetails } from '../redux/slices/storeSlice';
 import { fetchHolidays } from '../redux/slices/holidaysSlice';
 import { fetchIncentives } from '../redux/slices/incentivesSlice';
+import { assignedOrders } from '../services/api/api';
 // import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const HomeScreen = ({ route, navigation }) => {
@@ -66,33 +67,62 @@ const HomeScreen = ({ route, navigation }) => {
     //     fetchAgentId();
     // }, []);
 
+
+    useEffect(() => {
+        const fetchAssignedOrders = async () => {
+            try {
+                // Get agentId from AsyncStorage (if stored)
+                const agentId = await AsyncStorage.getItem("agentId");
+                if (!agentId) {
+                    console.warn("No agent ID found in storage");
+                    setLoading(false);
+                    return;
+
+                }
+
+                const response = await assignedOrders(agentId);
+                const filteredOrders = response.data.filter(
+                    (order) => order.status !== "Order Delivered"
+                );
+                console.log("Assigned Orders:", response.data);
+                setOrders(filteredOrders);
+            } catch (error) {
+                console.error("Error fetching assigned orders:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchAssignedOrders();
+    }, []);
+
     useEffect(() => {
         console.log('Agent from Redux:', agent);
     }, [agent]);
 
-    useEffect(() => {
-        setLoading(true);
-        console.log("agent.storeId", agent?.storeId)
-        const unsubscribe = firestore()
-            .collection('tasks')
-            .where('deliveryCompleted', '==', false)
-            .onSnapshot(snapshot => {
-                const fetchedOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // useEffect(() => {
+    //     setLoading(true);
+    //     console.log("agent.storeId", agent?.storeId)
+    //     const unsubscribe = firestore()
+    //         .collection('tasks')
+    //         .where('deliveryCompleted', '==', false)
+    //         .onSnapshot(snapshot => {
+    //             const fetchedOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-                // Filter orders by storeId matching agent's storeId
-                const filteredOrders = agent?.storeId
-                    ? fetchedOrders.filter(order => order.storeId === agent.storeId)
-                    : [];
-                console.log('filteredOrders', filteredOrders)
-                setOrders(filteredOrders.reverse());
-                setLoading(false);
-            }, error => {
-                console.error("Error fetching orders:", error);
-                setLoading(false);
-            });
+    //             // Filter orders by storeId matching agent's storeId
+    //             const filteredOrders = agent?.storeId
+    //                 ? fetchedOrders.filter(order => order.storeId === agent.storeId)
+    //                 : [];
+    //             console.log('filteredOrders', filteredOrders)
+    //             setOrders(filteredOrders.reverse());
+    //             setLoading(false);
+    //         }, error => {
+    //             console.error("Error fetching orders:", error);
+    //             setLoading(false);
+    //         });
 
-        return () => unsubscribe();
-    }, [agent?.storeId]);
+    //     return () => unsubscribe();
+    // }, [agent?.storeId]);
 
 
     useEffect(() => {
@@ -210,7 +240,7 @@ const HomeScreen = ({ route, navigation }) => {
                     <LoaderComponent />
                 ) : (
                     <>
-                        {isOnDuty ? (
+                        {/* {isOnDuty ? (
                             <FlatList
                                 data={orders}
                                 keyExtractor={(item) => item.id.toString()}
@@ -230,7 +260,30 @@ const HomeScreen = ({ route, navigation }) => {
                             <View style={styles.noDutyView}>
                                 <Text style={styles.noDutyText}>You are not on duty right now.</Text>
                             </View>
-                        )}
+                        )} */}
+                        {/* {isOnDuty ? ( */}
+                        <FlatList
+                            data={orders}
+                            keyExtractor={(item) => item.orderId}
+                            renderItem={({ item }) => (
+                                <OrderCard
+                                    task_no={item.orderNumber}
+                                    // onDecline={() => onDecline(item.id)}
+                                    navigation={navigation}
+                                    id={item.orderId}
+                                    handleOrderAccepted={handleOrderAccepted}
+                                    status={item.status}
+                                    agentId={item.delAgentId}
+                                />
+                            )}
+                            ListEmptyComponent={<EmptyComponent text='NO ORDERS' />}
+                        />
+
+                        {/* ) : (
+                            <View style={styles.noDutyView}>
+                                <Text style={styles.noDutyText}>You are not on duty right now.</Text>
+                            </View>
+                        )} */}
                     </>
                 )}
             </SafeAreaView>
