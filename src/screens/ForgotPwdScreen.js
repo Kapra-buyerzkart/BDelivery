@@ -47,7 +47,6 @@ const ForgotPwdScreen = props => {
             const response = await forgotPwd(mobileNo);
             const res = response.data;
             if (res?.Data) {
-                console.log("1111")
                 setShowSuccessAlert(true)
             } else {
                 setShownvalidAlert(true)

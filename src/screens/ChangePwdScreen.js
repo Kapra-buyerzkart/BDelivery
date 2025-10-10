@@ -95,7 +95,7 @@ const ChangePwdScreen = ({ navigation, route }) => {
                 setShowAlert(true);
             }
         } catch (error) {
-            console.error('Error changing password:', error);
+            // console.error('Error changing password:', error);
             setErrorAlertMessage('Something went wrong. Please try again.');
             setShowErrorAlert(true);
         } finally {

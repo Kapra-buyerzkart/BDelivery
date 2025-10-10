@@ -20,7 +20,7 @@ import { fetchAgentDetails } from '../redux/slices/agentSlice';
 import { fetchStoreDetails } from '../redux/slices/storeSlice';
 import { fetchHolidays } from '../redux/slices/holidaysSlice';
 import { fetchIncentives } from '../redux/slices/incentivesSlice';
-import { assignedOrders } from '../services/api/api';
+import { assignedOrders, getAllOrders, modifyOrderStatus } from '../services/api/api';
 // import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const HomeScreen = ({ route, navigation }) => {
@@ -32,6 +32,9 @@ const HomeScreen = ({ route, navigation }) => {
     const [orderAlreadyAccepted, setOrderAlreadyAccepted] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [orderNo, setOrderNo] = useState(null);
+    const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+    const [selectedOrder, setSelectedOrder] = useState(null);
+    const [refreshing, setRefreshing] = useState(false);
 
     const drawerRef = useRef(null);
 
@@ -45,6 +48,11 @@ const HomeScreen = ({ route, navigation }) => {
         if (drawerRef.current) {
             drawerRef.current.close();
         }
+    };
+
+    const handleAcceptPress = (order) => {
+        setSelectedOrder(order);
+        setConfirmModalVisible(true);
     };
 
     const handleOrderAccepted = (value, orderNo) => {
@@ -67,37 +75,65 @@ const HomeScreen = ({ route, navigation }) => {
     //     fetchAgentId();
     // }, []);
 
+    const handleOkPress = async () => {
+        try {
+            setConfirmModalVisible(false);
+            setLoading(true);
+            const res =
+                await modifyOrderStatus(
+                    selectedOrder.orderId,
+                    selectedOrder.agentId,
+                    "Delivery Agent Accepted"
+                );
+            // console.log("ressss", res.data)
+            navigation.navigate("OrderDetails", {
+                orderId: selectedOrder.orderId,
+            });
+        } catch (error) {
+            console.error("Error accepting order:", error);
+        } finally {
+            setLoading(false);
+        }
+
+    }
+
+    const fetchAssignedOrders = async () => {
+        setLoading(true)
+        try {
+            // Get agentId from AsyncStorage (if stored)
+            const agentId = await AsyncStorage.getItem("agentId");
+            if (!agentId) {
+                console.warn("No agent ID found in storage");
+                setLoading(false);
+                return;
+
+            }
+
+            const response = await getAllOrders(agentId);
+            // const filteredOrders = response.data.filter(
+            //     (order) => order.status !== "Order Delivered"
+            // );
+            // console.log("Assigned Orders:", response.data);
+            setOrders(response.data);
+        } catch (error) {
+            console.error("Error fetching assigned orders:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const onRefresh = async () => {
+        setRefreshing(true);
+        await fetchAssignedOrders();
+        setRefreshing(false);
+    };
 
     useEffect(() => {
-        const fetchAssignedOrders = async () => {
-            try {
-                // Get agentId from AsyncStorage (if stored)
-                const agentId = await AsyncStorage.getItem("agentId");
-                if (!agentId) {
-                    console.warn("No agent ID found in storage");
-                    setLoading(false);
-                    return;
-
-                }
-
-                const response = await assignedOrders(agentId);
-                const filteredOrders = response.data.filter(
-                    (order) => order.status !== "Order Delivered"
-                );
-                console.log("Assigned Orders:", response.data);
-                setOrders(filteredOrders);
-            } catch (error) {
-                console.error("Error fetching assigned orders:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchAssignedOrders();
     }, []);
 
     useEffect(() => {
-        console.log('Agent from Redux:', agent);
+        // console.log('Agent from Redux:', agent);
     }, [agent]);
 
     // useEffect(() => {
@@ -125,44 +161,44 @@ const HomeScreen = ({ route, navigation }) => {
     // }, [agent?.storeId]);
 
 
-    useEffect(() => {
-        const loadDutyStatus = async () => {
-            // if (!agentId) return;
-            console.log('agentIduf', agentId)
+    // useEffect(() => {
+    //     const loadDutyStatus = async () => {
+    //         // if (!agentId) return;
+    //         console.log('agentIduf', agentId)
 
-            try {
-                const doc = await firestore()
-                    .collection('deliveryAgents')
-                    .doc(agent.agentId)
-                    .get();
+    //         try {
+    //             const doc = await firestore()
+    //                 .collection('deliveryAgents')
+    //                 .doc(agent.agentId)
+    //                 .get();
 
-                if (doc.exists) {
-                    const data = doc.data();
-                    if (data?.onDuty !== undefined) {
-                        setIsOnDuty(data.onDuty);
-                    }
-                } else {
-                    console.warn('No such document found for agentId:', agent.agentId);
-                }
-            } catch (error) {
-                console.error('Failed to load duty status from Firestore:', error);
-            }
-        };
+    //             if (doc.exists) {
+    //                 const data = doc.data();
+    //                 if (data?.onDuty !== undefined) {
+    //                     setIsOnDuty(data.onDuty);
+    //                 }
+    //             } else {
+    //                 console.warn('No such document found for agentId:', agent.agentId);
+    //             }
+    //         } catch (error) {
+    //             console.error('Failed to load duty status from Firestore:', error);
+    //         }
+    //     };
 
-        loadDutyStatus();
-    }, [agent.agentId]);
+    //     loadDutyStatus();
+    // }, [agent.agentId]);
 
     const dispatch = useDispatch();
 
     useEffect(() => {
         dispatch(fetchAgentDetails()); // Replace with real ID
-        dispatch(fetchStoreDetails());
-        dispatch(fetchHolidays());
-        dispatch(fetchIncentives());
+        // dispatch(fetchStoreDetails());
+        // dispatch(fetchHolidays());
+        // dispatch(fetchIncentives());
     }, [dispatch]);
 
     const toggleDutyStatus = async () => {
-        console.log("ggg", agent.agentId)
+        // console.log("ggg", agent.agentId)
         try {
             const newStatus = !isOnDuty;
             setIsOnDuty(newStatus);
@@ -181,6 +217,11 @@ const HomeScreen = ({ route, navigation }) => {
         }
     };
 
+    if (loading) {
+        // Show loader while checking token
+        return <LoaderComponent />;
+    }
+
     return (
         <Drawer
             ref={drawerRef}
@@ -198,6 +239,38 @@ const HomeScreen = ({ route, navigation }) => {
             <SafeAreaView style={styles.container}>
                 {/* {console.log("loading", loading)}
                 {console.log("holidays", holidays)} */}
+                <Modal
+                    transparent={true}
+                    visible={confirmModalVisible}
+                    animationType="fade"
+                    onRequestClose={() => setConfirmModalVisible(false)}
+                >
+                    <View style={styles.modalBackground}>
+                        <View style={styles.modalContent}>
+                            <Text style={styles.modalText}>
+                                Do you want to accept order{" "}
+                                <Text style={styles.orderNoText}>{selectedOrder?.taskNo}?</Text>
+                            </Text>
+
+                            <View style={styles.modalButtonContainer}>
+                                <TouchableOpacity
+                                    style={[styles.modalButton, { backgroundColor: AppColors.green, marginRight: 5 }]}
+                                    onPress={handleOkPress} // your API call
+                                >
+                                    <Text style={styles.okButtonText}>OK</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.modalButton, { backgroundColor: AppColors.red, marginLeft: 5 }]}
+                                    onPress={() => setConfirmModalVisible(false)}
+                                >
+                                    <Text style={styles.okButtonText}>Cancel</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
+
                 <Modal
                     transparent={true}
                     visible={modalVisible}
@@ -268,15 +341,18 @@ const HomeScreen = ({ route, navigation }) => {
                             renderItem={({ item }) => (
                                 <OrderCard
                                     task_no={item.orderNumber}
-                                    // onDecline={() => onDecline(item.id)}
                                     navigation={navigation}
                                     id={item.orderId}
-                                    handleOrderAccepted={handleOrderAccepted}
                                     status={item.status}
                                     agentId={item.delAgentId}
+                                    onAccept={(order) => handleAcceptPress(order)} // 👈 pass order to modal
+                                    pincode={item.shippingAddress.pincode}
+                                    area={item.shippingAddress.area}
                                 />
                             )}
                             ListEmptyComponent={<EmptyComponent text='NO ORDERS' />}
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
                         />
 
                         {/* ) : (
@@ -342,20 +418,28 @@ const styles = StyleSheet.create({
     modalBackground: {
         flex: 1,
         justifyContent: 'center',
+        alignItems: 'center',
         backgroundColor: 'rgba(0,0,0,0.5)',
-        padding: 20
+        padding: 20,
     },
     modalContent: {
+        width: '100%',
         backgroundColor: AppColors.whiteColor,
         padding: 25,
         borderRadius: 10,
-        alignItems: 'center'
+        alignItems: 'center',
     },
     modalText: {
         fontSize: 16,
-        marginBottom: 10,
         fontFamily: Fonts.OpenSansRegular,
-        color: AppColors.black
+        color: AppColors.black,
+        textAlign: 'center',
+        marginBottom: 10,
+    },
+    orderNoText: {
+        fontFamily: Fonts.OpenSansBold,
+        color: AppColors.black,
+        fontSize: 17,
     },
     okButton: {
         marginTop: 15,
@@ -373,7 +457,24 @@ const styles = StyleSheet.create({
         fontFamily: Fonts.OpenSansBold,
         color: AppColors.black,
         fontSize: 17
-    }
+    },
+    modalButton: {
+        flex: 1,              // equal width
+        paddingVertical: 12,  // equal height
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    modalButtonContainer: {
+        flexDirection: 'row',
+        marginTop: 15,
+        width: '100%',
+    },
+    okButtonText: {
+        color: AppColors.whiteColor,
+        fontSize: 16,
+        fontFamily: Fonts.OpenSansBold,
+    },
 });
 
 const drawerStyles = {

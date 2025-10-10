@@ -28,7 +28,7 @@ const OtpVerifyScreen = (props) => {
 
         setLoading(true);
         try {
-            console.log(mobileNo)
+            // console.log(mobileNo)
             const response = await verifyOtp(mobileNo, otp);
             const res = response.data;
 
@@ -61,7 +61,7 @@ const OtpVerifyScreen = (props) => {
                 Alert.alert("Failed", "Could not resend OTP");
             }
         } catch (error) {
-            console.log('error', error)
+            // console.log('error', error)
             Alert.alert("Error", "Something went wrong while resending OTP");
         } finally {
             setLoading(false);

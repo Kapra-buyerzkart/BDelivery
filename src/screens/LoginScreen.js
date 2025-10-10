@@ -87,9 +87,8 @@ const LoginScreen = props => {
             //     .get();
 
             const res = await login(mobileNo, password);
-            console.log("res", res.data)
+            // console.log("res", res.data)
             if (res.data?.Token) {
-                console.log("1111")
                 await AsyncStorage.setItem("authToken", res.data.Token);
                 await AsyncStorage.setItem("refreshToken", res.data.RefreshToken);
                 await AsyncStorage.setItem("agentId", res.data.AgentId.toString());

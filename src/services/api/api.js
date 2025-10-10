@@ -64,3 +64,18 @@ export const modifyOrderStatus = (orderId, agentId, status) => {
 export const getAllOrders = (agentId) => {
     return apiClient.get(`/DeliveryAgent/GetAllOrderSuperMarket?agentid=${agentId}`)
 }
+
+export const fetchOrderDetails = (orderId) => {
+    return apiClient.get(`/Order/CustOrderItemList?orderId=${orderId}`);
+};
+
+export const completeOrderDelivery = (orderId, delAgentId, status, signImage, deliveryNote, deliveryFreebies) => {
+    return apiClient.post("/Delivery/OrderDeliveryComplete", {
+        orderId,
+        delAgentId,
+        status,
+        signImage,
+        deliveryNote,
+        deliveryFreebies,
+    });
+};

@@ -6,7 +6,7 @@ import { AppColors } from '../constants/Colors'
 import firestore from '@react-native-firebase/firestore';
 import { modifyOrderStatus } from '../services/api/api'
 
-const OrderCard = ({ task_no, onDecline, navigation, id, handleOrderAccepted, status, agentId }) => {
+const OrderCard = ({ task_no, onDecline, navigation, id, handleOrderAccepted, status, agentId, onAccept, pincode, area }) => {
 
     // const handleAccept = async () => {
     //     const docRef = firestore().collection('tasks').doc(id);
@@ -69,21 +69,36 @@ const OrderCard = ({ task_no, onDecline, navigation, id, handleOrderAccepted, st
                     {task_no}
                 </Text>
             </View>
+            <View style={styles.orderTitleView}>
+                <Text style={styles.orderTitle}>Pincode:</Text>
+                <Text
+                    style={[
+                        styles.orderTitle,
+                        { fontFamily: Fonts.OpenSansBold },
+                    ]}>
+                    {' '}
+                    {pincode}
+                </Text>
+            </View>
+            <View style={styles.orderTitleView}>
+                <Text style={styles.orderTitle}>Area:</Text>
+                <Text
+                    style={[
+                        styles.orderTitle,
+                        { fontFamily: Fonts.OpenSansBold },
+                    ]}>
+                    {' '}
+                    {area}
+                </Text>
+            </View>
+
             <View style={styles.buttonRow}>
-                {status === "Delivery Agent Accepted" ? <View
-                    style={[styles.button, { backgroundColor: AppColors.orange }]}
-                    onPress={handleAccepted}
+                <TouchableOpacity
+                    style={styles.button}
+                    onPress={() => onAccept && onAccept({ orderId: id, taskNo: task_no, agentId })}
                 >
-                    <Text style={styles.buttonText}>Accepted</Text>
-                </View>
-                    :
-                    <TouchableOpacity
-                        style={styles.button}
-                        onPress={handleAccept}
-                    >
-                        <Text style={styles.buttonText}>Accept</Text>
-                    </TouchableOpacity>
-                }
+                    <Text style={styles.buttonText}>Accept</Text>
+                </TouchableOpacity>
             </View>
         </View>
     )
@@ -109,7 +124,7 @@ const styles = StyleSheet.create({
     orderTitle: {
         fontSize: 13,
         // fontWeight: 'bold',
-        marginBottom: 10,
+        marginBottom: 5,
         color: AppColors.black,
         fontFamily: Fonts.OpenSansSemiBold,
     },
@@ -118,6 +133,7 @@ const styles = StyleSheet.create({
         // justifyContent: 'space-between',
         justifyContent: "space-evenly",
         width: '100%',
+        marginTop: 5
     },
     button: {
         padding: 10,
