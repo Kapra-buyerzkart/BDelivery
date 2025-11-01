@@ -130,8 +130,8 @@ const EarningsScreen = ({ navigation }) => {
             const isFullTime = agent.type === 'FULL TIME';
             // const monthlySalary = isFullTime ? 10000 : 7000;
             const monthlySalary = Number(incentives?.monthlySalary?.[agent.type?.toUpperCase()?.includes('FULL') ? 'Full Time' : 'Part Time'] || 0)
-            console.log('holidays', holidays)
-            console.log('filteredDates', filteredDates)
+            // console.log('holidays', holidays)
+            // console.log('filteredDates', filteredDates)
             const holidayDates = holidays.map(h => h.date); // ["2025-08-15", "2025-10-02"]
 
             const specialAttendanceIncentive = filteredDates
@@ -193,13 +193,13 @@ const EarningsScreen = ({ navigation }) => {
             if (!data?.completedOrders) return;
 
             const todayTasks = data.completedOrders.filter(task => {
-                console.log('task.deliveryAddress.date', task.deliveryAddress.date)
-                console.log('moment().format', moment().format('DD MMM YYYY'))
+                // console.log('task.deliveryAddress.date', task.deliveryAddress.date)
+                // console.log('moment().format', moment().format('DD MMM YYYY'))
                 return task.deliveryAddress.date === moment().format('DD MMM YYYY')
             }
             );
 
-            console.log('todayTasks', todayTasks)
+            // console.log('todayTasks', todayTasks)
 
             const distance = todayTasks.reduce((sum, task) => sum + parseFloat(task.kilometers || 0), 0);
             const petrol = distance * incentives.petrolAllowance;
@@ -253,7 +253,7 @@ const EarningsScreen = ({ navigation }) => {
 
     return (
         <SafeAreaView style={styles.container}>
-            {console.log('incentives', incentives)}
+            {/* {console.log('incentives', incentives)} */}
             <View style={styles.topView}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <MaterialIcons name="arrow-back" size={24} color={AppColors.whiteColor} />

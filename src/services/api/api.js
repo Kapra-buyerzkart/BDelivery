@@ -62,6 +62,7 @@ export const modifyOrderStatus = (orderId, agentId, status) => {
 };
 
 export const getAllOrders = (agentId) => {
+    console.log("pending")
     return apiClient.get(`/DeliveryAgent/GetAllOrderSuperMarket?agentid=${agentId}`)
 }
 
@@ -79,3 +80,30 @@ export const completeOrderDelivery = (orderId, delAgentId, status, signImage, de
         deliveryFreebies,
     });
 };
+
+export const markAttendance = (DeliveryBoyId, Status, longitude, latitude) => {
+    return apiClient.post("/DeliveryAgent/attendance", {
+        DeliveryBoyId,
+        Status,
+        longitude,
+        latitude
+    });
+};
+
+export const fetchAttendance = (DeliveryBoyId, StartDate, EndDate) => {
+    return apiClient.get(`/DeliveryAgent/attendanceDateRange?deliveryBoyId=${DeliveryBoyId}&startDate=${StartDate}&endDate=${EndDate}`);
+}
+
+export const fetchEarnings = (DeliveryBoyId, StartDate, EndDate) => {
+    return apiClient.get(`/DeliveryAgent/earningsDateRange?delivery_boy_id=${DeliveryBoyId}&startDate=${StartDate}&endDate=${EndDate}`);
+}
+
+export const fetchDeliveryAgentAcceptedOrders = (agentId) => {
+    console.log("accepted")
+    return apiClient.get(`/DeliveryAgent/GetAllOrderSuperMarketByStatus/?agentid=${agentId}&status=Delivery Agent Accepted`)
+}
+
+export const fetchDeliveredOrders = (agentId) => {
+    console.log("delivered")
+    return apiClient.get(`/DeliveryAgent/GetAllOrderSuperMarketByStatus/?agentid=${agentId}&status=Order Delivered`)
+}

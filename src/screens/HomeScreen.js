@@ -1,246 +1,231 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Button, StyleSheet, SafeAreaView, FlatList, Switch, Platform, Modal } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/Container';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+    View, Text, StyleSheet, SafeAreaView, FlatList, TouchableOpacity, Modal, Switch,
+    Alert
+} from 'react-native';
+import Entypo from 'react-native-vector-icons/Entypo';
 import { AppColors } from '../constants/Colors';
+import { Fonts } from '../constants/Fonts';
 import Drawer from 'react-native-drawer';
 import DrawerContent from '../components/DrawerContent';
-import { TouchableOpacity } from 'react-native';
-import Entypo from 'react-native-vector-icons/Entypo';
-import { Fonts } from '../constants/Fonts';
-import OrderCard from '../components/OrderCard';
-import EmptyComponent from '../components/EmptyComponent';
-import firestore from '@react-native-firebase/firestore';
-import { USE_DEV_FIREBASE } from '@env';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoaderComponent from '../components/LoaderComponent';
-import { useDispatch, useSelector } from 'react-redux';
-import { setTasks } from '../redux/actions/taskAction';
+import EmptyComponent from '../components/EmptyComponent';
+import OrderCard from '../components/OrderCard';
+import { getAllOrders, fetchDeliveryAgentAcceptedOrders, fetchDeliveredOrders, modifyOrderStatus } from '../services/api/api';
+import firestore from '@react-native-firebase/firestore';
+import { useSelector, useDispatch } from 'react-redux';
 import { fetchAgentDetails } from '../redux/slices/agentSlice';
-import { fetchStoreDetails } from '../redux/slices/storeSlice';
-import { fetchHolidays } from '../redux/slices/holidaysSlice';
-import { fetchIncentives } from '../redux/slices/incentivesSlice';
-import { assignedOrders, getAllOrders, modifyOrderStatus } from '../services/api/api';
-// import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 
-const HomeScreen = ({ route, navigation }) => {
-
-    const [loading, setLoading] = useState(false)
-    const [agentId, setAgentId] = useState(null)
-    const [isOnDuty, setIsOnDuty] = useState(false); // State for the switch
+const HomeScreen = ({ navigation }) => {
+    const [activeTab, setActiveTab] = useState('PENDING');
     const [orders, setOrders] = useState([]);
-    const [orderAlreadyAccepted, setOrderAlreadyAccepted] = useState(false);
-    const [modalVisible, setModalVisible] = useState(false);
-    const [orderNo, setOrderNo] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [agentId, setAgentId] = useState(null);
+    const [isOnDuty, setIsOnDuty] = useState(false);
     const [confirmModalVisible, setConfirmModalVisible] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState(null);
-    const [refreshing, setRefreshing] = useState(false);
 
     const drawerRef = useRef(null);
+    const dispatch = useDispatch();
+    const agent = useSelector((state) => state.agent);
 
-    const openDrawer = () => {
-        if (drawerRef.current) {
-            drawerRef.current.open();
+    // Fetch agent ID once
+    useEffect(() => {
+        (async () => {
+            const id = await AsyncStorage.getItem('agentId');
+            setAgentId(id);
+        })();
+    }, []);
+
+    // Fetch agent details from Redux
+    useEffect(() => {
+        dispatch(fetchAgentDetails());
+    }, [dispatch]);
+
+    // Fetch orders based on tab
+    const fetchOrders = async () => {
+        // console.log("agentId", agentId)
+        if (!agentId) return;
+        setLoading(true);
+        try {
+            let response;
+            if (activeTab === 'PENDING') {
+                response = await getAllOrders(agentId);
+            } else if (activeTab === 'DELIVERING') {
+                response = await fetchDeliveryAgentAcceptedOrders(agentId);
+            } else if (activeTab === 'DELIVERED') {
+                response = await fetchDeliveredOrders(agentId);
+                console.log('response', response)
+            }
+            setOrders(response?.data || []);
+        } catch (error) {
+            console.error('Error fetching orders:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const closeDrawer = () => {
-        if (drawerRef.current) {
-            drawerRef.current.close();
-        }
-    };
+    // useEffect(() => {
+    //     fetchOrders();
+    // }, [activeTab, agentId]);
 
+    useFocusEffect(
+        useCallback(() => {
+            // This will run every time the screen comes into focus
+            fetchOrders();
+        }, [activeTab, agentId])
+    );
+
+    // Accept Order Handler
     const handleAcceptPress = (order) => {
         setSelectedOrder(order);
         setConfirmModalVisible(true);
     };
 
-    const handleOrderAccepted = (value, orderNo) => {
-        setOrderAlreadyAccepted(value)
-        setModalVisible(value)
-        setOrderNo(orderNo)
-    }
-    // console.log('ppppp', Platform.Version)
-
-    const agent = useSelector((state) => state.agent);
-    const holidays = useSelector((state) => state.holidays)
-
-    // console.log("agggg", agent)
-
-    // useEffect(() => {
-    //     const fetchAgentId = async () => {
-    //         const id = await AsyncStorage.getItem('id');
-    //         setAgentId(id);
-    //     };
-    //     fetchAgentId();
-    // }, []);
-
     const handleOkPress = async () => {
         try {
             setConfirmModalVisible(false);
             setLoading(true);
-            const res =
-                await modifyOrderStatus(
-                    selectedOrder.orderId,
-                    selectedOrder.agentId,
-                    "Delivery Agent Accepted"
-                );
-            // console.log("ressss", res.data)
-            navigation.navigate("OrderDetails", {
-                orderId: selectedOrder.orderId,
-            });
+            const res = await modifyOrderStatus(
+                selectedOrder.orderId,
+                selectedOrder.agentId,
+                "Delivery Agent Accepted"
+            );
+            console.log("acceptres", res)
+            if (res.status === 200) {
+                navigation.navigate("OrderDetails", { orderId: selectedOrder.orderId });
+            } else {
+                Alert.alert("Something went wrong")
+            }
+            // fetchOrders(); // refresh list
         } catch (error) {
             console.error("Error accepting order:", error);
         } finally {
             setLoading(false);
         }
-
-    }
-
-    const fetchAssignedOrders = async () => {
-        setLoading(true)
-        try {
-            // Get agentId from AsyncStorage (if stored)
-            const agentId = await AsyncStorage.getItem("agentId");
-            if (!agentId) {
-                console.warn("No agent ID found in storage");
-                setLoading(false);
-                return;
-
-            }
-
-            const response = await getAllOrders(agentId);
-            // const filteredOrders = response.data.filter(
-            //     (order) => order.status !== "Order Delivered"
-            // );
-            // console.log("Assigned Orders:", response.data);
-            setOrders(response.data);
-        } catch (error) {
-            console.error("Error fetching assigned orders:", error);
-        } finally {
-            setLoading(false);
-        }
     };
-
-    const onRefresh = async () => {
-        setRefreshing(true);
-        await fetchAssignedOrders();
-        setRefreshing(false);
-    };
-
-    useEffect(() => {
-        fetchAssignedOrders();
-    }, []);
-
-    useEffect(() => {
-        // console.log('Agent from Redux:', agent);
-    }, [agent]);
-
-    // useEffect(() => {
-    //     setLoading(true);
-    //     console.log("agent.storeId", agent?.storeId)
-    //     const unsubscribe = firestore()
-    //         .collection('tasks')
-    //         .where('deliveryCompleted', '==', false)
-    //         .onSnapshot(snapshot => {
-    //             const fetchedOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-    //             // Filter orders by storeId matching agent's storeId
-    //             const filteredOrders = agent?.storeId
-    //                 ? fetchedOrders.filter(order => order.storeId === agent.storeId)
-    //                 : [];
-    //             console.log('filteredOrders', filteredOrders)
-    //             setOrders(filteredOrders.reverse());
-    //             setLoading(false);
-    //         }, error => {
-    //             console.error("Error fetching orders:", error);
-    //             setLoading(false);
-    //         });
-
-    //     return () => unsubscribe();
-    // }, [agent?.storeId]);
-
-
-    // useEffect(() => {
-    //     const loadDutyStatus = async () => {
-    //         // if (!agentId) return;
-    //         console.log('agentIduf', agentId)
-
-    //         try {
-    //             const doc = await firestore()
-    //                 .collection('deliveryAgents')
-    //                 .doc(agent.agentId)
-    //                 .get();
-
-    //             if (doc.exists) {
-    //                 const data = doc.data();
-    //                 if (data?.onDuty !== undefined) {
-    //                     setIsOnDuty(data.onDuty);
-    //                 }
-    //             } else {
-    //                 console.warn('No such document found for agentId:', agent.agentId);
-    //             }
-    //         } catch (error) {
-    //             console.error('Failed to load duty status from Firestore:', error);
-    //         }
-    //     };
-
-    //     loadDutyStatus();
-    // }, [agent.agentId]);
-
-    const dispatch = useDispatch();
-
-    useEffect(() => {
-        dispatch(fetchAgentDetails()); // Replace with real ID
-        // dispatch(fetchStoreDetails());
-        // dispatch(fetchHolidays());
-        // dispatch(fetchIncentives());
-    }, [dispatch]);
 
     const toggleDutyStatus = async () => {
-        // console.log("ggg", agent.agentId)
         try {
             const newStatus = !isOnDuty;
             setIsOnDuty(newStatus);
-
-            // Update Firestore
             await firestore()
                 .collection('deliveryAgents')
                 .doc(agent.agentId)
-                .update({
-                    onDuty: newStatus,
-                });
-
-            console.log('Duty status updated in Firestore:', newStatus);
+                .update({ onDuty: newStatus });
         } catch (error) {
             console.error('Failed to update duty status in Firestore:', error);
         }
     };
 
-    if (loading) {
-        // Show loader while checking token
-        return <LoaderComponent />;
-    }
+    const renderOrderCard = ({ item }) => {
+        if (activeTab === 'PENDING') {
+            console.log("ppppitem", item)
+            return (
+                <OrderCard
+                    task_no={item.orderNumber}
+                    navigation={navigation}
+                    id={item.orderId}
+                    status={item.status}
+                    agentId={item.delAgentId}
+                    pincode={item.shippingAddress?.pincode}
+                    area={item.shippingAddress?.area}
+                    onAccept={() => handleAcceptPress(item)}
+                    type="PENDING"
+                />
+            );
+        } else if (activeTab === 'DELIVERING') {
+            console.log("DELIVERINGitem", item)
+            return (
+                <OrderCard
+                    task_no={item.orderNumber}
+                    navigation={navigation}
+                    id={item.orderId}
+                    status={item.status}
+                    pincode={item.shippingAddress?.pincode}
+                    area={item.shippingAddress?.areaName}
+                    type="DELIVERING"
+                />
+            );
+        } else {
+            return (
+                <OrderCard
+                    task_no={item.orderNumber}
+                    deliveredItems={item.deliveredItems || 0}
+                    deliveredDate={item.assignedDate}
+                    navigation={navigation}
+                    id={item.orderId}
+                    pincode={item.shippingAddress?.pincode}
+                    area={item.shippingAddress?.areaName}
+                    type="DELIVERED"
+                />
+            );
+        }
+    };
+
+    if (loading) return <LoaderComponent />;
 
     return (
         <Drawer
             ref={drawerRef}
             type="overlay"
-            content={<DrawerContent navigation={navigation} closeDrawer={closeDrawer} />}
-            tapToClose={true}
-            openDrawerOffset={0.3} // 20% gap on the right
-            // panCloseMask={0.2}
-            // closedDrawerOffset={-3}
+            content={<DrawerContent navigation={navigation} closeDrawer={() => drawerRef.current?.close()} />}
+            tapToClose
+            openDrawerOffset={0.3}
             styles={drawerStyles}
-        // tweenHandler={ratio => ({
-        //   main: { opacity: (2 - ratio) / 2 },
-        // })}
         >
             <SafeAreaView style={styles.container}>
-                {/* {console.log("loading", loading)}
-                {console.log("holidays", holidays)} */}
+
+                {/* Top Bar */}
+                <View style={styles.topBar}>
+                    <TouchableOpacity onPress={() => drawerRef.current?.open()}>
+                        <Entypo name="menu" size={33} color={AppColors.whiteColor} />
+                    </TouchableOpacity>
+                    <Text style={styles.headerText}>ORDERS</Text>
+                    <View style={styles.switchView}>
+                        <Text style={[styles.switchText, isOnDuty ? { color: AppColors.green } : { color: AppColors.red }]}>ON DUTY</Text>
+                        <Switch
+                            trackColor={{ false: AppColors.lightRed, true: AppColors.lightGreen }}
+                            thumbColor={isOnDuty ? AppColors.green : AppColors.red}
+                            onValueChange={toggleDutyStatus}
+                            value={isOnDuty}
+                        />
+                    </View>
+                </View>
+
+                {/* Tabs */}
+                <View style={styles.tabContainer}>
+                    {['PENDING', 'DELIVERING', 'DELIVERED'].map(tab => (
+                        <TouchableOpacity
+                            key={tab}
+                            style={[styles.tabButton, activeTab === tab && styles.activeTab]}
+                            onPress={() => {
+                                setOrders([]);
+                                setActiveTab(tab)
+                            }}
+                        >
+                            <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>
+                                {tab}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+
+                {/* Orders List */}
+                <FlatList
+                    data={orders}
+                    keyExtractor={(item) => `${activeTab}-${item.orderId}`}
+                    renderItem={renderOrderCard}
+                    ListEmptyComponent={<EmptyComponent text="NO ORDERS FOUND" />}
+                    onRefresh={fetchOrders}
+                    refreshing={loading}
+                />
+
+                {/* Confirm Accept Modal */}
                 <Modal
-                    transparent={true}
+                    transparent
                     visible={confirmModalVisible}
                     animationType="fade"
                     onRequestClose={() => setConfirmModalVisible(false)}
@@ -249,21 +234,13 @@ const HomeScreen = ({ route, navigation }) => {
                         <View style={styles.modalContent}>
                             <Text style={styles.modalText}>
                                 Do you want to accept order{" "}
-                                <Text style={styles.orderNoText}>{selectedOrder?.taskNo}?</Text>
+                                <Text style={styles.orderNoText}>{selectedOrder?.orderNumber}?</Text>
                             </Text>
-
                             <View style={styles.modalButtonContainer}>
-                                <TouchableOpacity
-                                    style={[styles.modalButton, { backgroundColor: AppColors.green, marginRight: 5 }]}
-                                    onPress={handleOkPress} // your API call
-                                >
+                                <TouchableOpacity style={[styles.modalButton, { backgroundColor: AppColors.green }]} onPress={handleOkPress}>
                                     <Text style={styles.okButtonText}>OK</Text>
                                 </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={[styles.modalButton, { backgroundColor: AppColors.red, marginLeft: 5 }]}
-                                    onPress={() => setConfirmModalVisible(false)}
-                                >
+                                <TouchableOpacity style={[styles.modalButton, { backgroundColor: AppColors.red }]} onPress={() => setConfirmModalVisible(false)}>
                                     <Text style={styles.okButtonText}>Cancel</Text>
                                 </TouchableOpacity>
                             </View>
@@ -271,215 +248,40 @@ const HomeScreen = ({ route, navigation }) => {
                     </View>
                 </Modal>
 
-                <Modal
-                    transparent={true}
-                    visible={modalVisible}
-                    animationType="fade"
-                    onRequestClose={() => setModalVisible(false)}
-                >
-                    <View style={styles.modalBackground}>
-                        <View style={styles.modalContent}>
-                            <Text style={styles.modalText}>Order <Text style={styles.orderNoText}>{orderNo} </Text>already taken</Text>
-                            <TouchableOpacity
-                                style={styles.okButton}
-                                onPress={() => setModalVisible(false)}
-                            >
-                                <Text style={styles.okButtonText}>OK</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </Modal>
-                <View style={styles.topView}>
-                    <TouchableOpacity onPress={openDrawer}>
-                        <Entypo name="menu" size={33} color={AppColors.whiteColor} />
-                    </TouchableOpacity>
-                    <Text style={styles.ordersText}>ORDERS</Text>
-                    <View style={styles.switchView}>
-                        <Text style={[styles.switchText, isOnDuty ?
-                            { color: AppColors.green } :
-                            { color: AppColors.red }
-                        ]}>ON DUTY</Text>
-                        <Switch
-                            // trackColor={{ false: '#767577', true: '#81b0ff' }}
-                            // thumbColor={isOnDuty ? '#f5dd4b' : '#f4f3f4'}
-                            trackColor={{ false: AppColors.lightRed, true: AppColors.lightGreen }}
-                            thumbColor={isOnDuty ? AppColors.green : AppColors.red}
-                            onValueChange={toggleDutyStatus}
-                            value={isOnDuty}
-                        />
-                    </View>
-                </View>
-                {loading ? (
-                    <LoaderComponent />
-                ) : (
-                    <>
-                        {/* {isOnDuty ? (
-                            <FlatList
-                                data={orders}
-                                keyExtractor={(item) => item.id.toString()}
-                                renderItem={({ item }) => (
-                                    <OrderCard
-                                        task_no={item.taskNo}
-                                        // onDecline={() => onDecline(item.id)}
-                                        navigation={navigation}
-                                        id={item.id}
-                                        handleOrderAccepted={handleOrderAccepted}
-                                    />
-                                )}
-                                ListEmptyComponent={<EmptyComponent text='NO ORDERS' />}
-                            />
-
-                        ) : (
-                            <View style={styles.noDutyView}>
-                                <Text style={styles.noDutyText}>You are not on duty right now.</Text>
-                            </View>
-                        )} */}
-                        {/* {isOnDuty ? ( */}
-                        <FlatList
-                            data={orders}
-                            keyExtractor={(item) => item.orderId}
-                            renderItem={({ item }) => (
-                                <OrderCard
-                                    task_no={item.orderNumber}
-                                    navigation={navigation}
-                                    id={item.orderId}
-                                    status={item.status}
-                                    agentId={item.delAgentId}
-                                    onAccept={(order) => handleAcceptPress(order)} // 👈 pass order to modal
-                                    pincode={item.shippingAddress.pincode}
-                                    area={item.shippingAddress.area}
-                                />
-                            )}
-                            ListEmptyComponent={<EmptyComponent text='NO ORDERS' />}
-                            refreshing={refreshing}
-                            onRefresh={onRefresh}
-                        />
-
-                        {/* ) : (
-                            <View style={styles.noDutyView}>
-                                <Text style={styles.noDutyText}>You are not on duty right now.</Text>
-                            </View>
-                        )} */}
-                    </>
-                )}
             </SafeAreaView>
         </Drawer>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: AppColors.appBackgroundColor,
+    container: { flex: 1, backgroundColor: AppColors.appBackgroundColor },
+    topBar: {
+        flexDirection: 'row', alignItems: 'center',
+        justifyContent: 'space-between', backgroundColor: AppColors.primaryColor,
+        paddingHorizontal: 10, height: 55
     },
-    switchView: {
-        justifyContent: "center",
-        alignItems: "center",
+    headerText: { color: AppColors.whiteColor, fontFamily: Fonts.OpenSansBold, fontSize: 16 },
+    switchView: { alignItems: 'center', opacity: 0 },
+    switchText: { fontSize: 10, fontFamily: Fonts.OpenSansBold },
+    tabContainer: {
+        flexDirection: 'row', justifyContent: 'space-around',
+        backgroundColor: AppColors.whiteColor, paddingVertical: 8, elevation: 3
     },
-    // switchSubView: {
-    //   flex: 1,
-    //   alignItems: 'center',
-    //   paddingVertical: 7,
-    //   marginVertical: 3,
-    //   marginHorizontal: 3,
-    // },
-    switchText: {
-        fontSize: 10,
-        color: AppColors.red,
-        fontFamily: Fonts.OpenSansExtraBold
-    },
-    topView: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: AppColors.primaryColor,
-        // paddingVertical: 6,
-        justifyContent: "space-between",
-        paddingHorizontal: 7,
-        height: 50
-    },
-    hideStyle: {
-        height: 0
-    },
-    ordersText: {
-        color: AppColors.whiteColor,
-        fontFamily: Fonts.OpenSansBold,
-        fontSize: 14
-    },
-    noDutyView: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center"
-    },
-    noDutyText: {
-        fontSize: 15,
-        fontFamily: Fonts.OpenSansSemiBold,
-        color: AppColors.black
-    },
-    modalBackground: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        padding: 20,
-    },
-    modalContent: {
-        width: '100%',
-        backgroundColor: AppColors.whiteColor,
-        padding: 25,
-        borderRadius: 10,
-        alignItems: 'center',
-    },
-    modalText: {
-        fontSize: 16,
-        fontFamily: Fonts.OpenSansRegular,
-        color: AppColors.black,
-        textAlign: 'center',
-        marginBottom: 10,
-    },
-    orderNoText: {
-        fontFamily: Fonts.OpenSansBold,
-        color: AppColors.black,
-        fontSize: 17,
-    },
-    okButton: {
-        marginTop: 15,
-        paddingVertical: 10,
-        paddingHorizontal: 25,
-        backgroundColor: AppColors.red,
-        borderRadius: 8
-    },
-    okButtonText: {
-        color: 'white',
-        fontSize: 16,
-        fontFamily: Fonts.OpenSansBold
-    },
-    orderNoText: {
-        fontFamily: Fonts.OpenSansBold,
-        color: AppColors.black,
-        fontSize: 17
-    },
-    modalButton: {
-        flex: 1,              // equal width
-        paddingVertical: 12,  // equal height
-        borderRadius: 8,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    modalButtonContainer: {
-        flexDirection: 'row',
-        marginTop: 15,
-        width: '100%',
-    },
-    okButtonText: {
-        color: AppColors.whiteColor,
-        fontSize: 16,
-        fontFamily: Fonts.OpenSansBold,
-    },
+    tabButton: { paddingVertical: 8, paddingHorizontal: 20, borderRadius: 8 },
+    activeTab: { backgroundColor: AppColors.primaryColor },
+    tabText: { color: AppColors.black, fontFamily: Fonts.OpenSansSemiBold, fontSize: 13 },
+    activeTabText: { color: AppColors.whiteColor },
+    modalBackground: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
+    modalContent: { width: '85%', backgroundColor: AppColors.whiteColor, padding: 20, borderRadius: 10 },
+    modalText: { textAlign: 'center', fontFamily: Fonts.OpenSansRegular, color: AppColors.black },
+    orderNoText: { fontFamily: Fonts.OpenSansBold, color: AppColors.black },
+    modalButtonContainer: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 15 },
+    modalButton: { flex: 1, marginHorizontal: 5, paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
+    okButtonText: { color: AppColors.whiteColor, fontFamily: Fonts.OpenSansBold }
 });
 
 const drawerStyles = {
     drawer: { shadowColor: '#000000', shadowOpacity: 0.8, shadowRadius: 3 },
-    // main: { paddingLeft: 3 },
 };
 
 export default HomeScreen;

@@ -1,240 +1,248 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, PermissionsAndroid, Platform } from 'react-native';
-import { Camera, useCameraDevice } from 'react-native-vision-camera';
+import React, { useEffect, useState } from 'react';
+import {
+    View,
+    Text,
+    TouchableOpacity,
+    StyleSheet,
+    Alert,
+    ActivityIndicator,
+    PermissionsAndroid,
+    Platform,
+} from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
-import firestore from '@react-native-firebase/firestore';
-import axios from 'axios';
-import uuid from 'react-native-uuid';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import * as mime from 'react-native-mime-types'; // helps with content-type
 import { useSelector } from 'react-redux';
+import Icon from 'react-native-vector-icons/Ionicons';
+import Entypo from 'react-native-vector-icons/Entypo';
 import { AppColors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
 import LoaderComponent from '../components/LoaderComponent';
-import Icon from 'react-native-vector-icons/Ionicons';
 import AlertComponent from '../components/AlertComponent';
-
-const storeLat = 9.991115246645776;
-const storeLon = 76.31722005310512;
-
-// 🔐 Replace these with your actual Cloudinary credentials
-const CLOUD_NAME = 'dgjrhnxgj';
-const UPLOAD_PRESET = 'Attendance';
+import { fetchAttendance, markAttendance } from '../services/api/api';
 
 export default function AttendanceScreen() {
     const route = useRoute();
     const { agentId } = route.params;
-    const camera = useRef(null);
-    const device = useCameraDevice('front');
-    const [hasPermission, setHasPermission] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [hasPermission, setHasPermission] = useState(false);
+    const [locationLoading, setLocationLoading] = useState(true);
+    const [latitude, setLatitude] = useState(null);
+    const [longitude, setLongitude] = useState(null);
     const [showSuccessAlert, setShowSuccessAlert] = useState(false);
     const [showErrorAlert, setShowErrorAlert] = useState(false);
-    const [showOutOfRangeAlert, setShowOutOfRangeAlert] = useState(false);
     const [showLocationErrorAlert, setShowLocationErrorAlert] = useState(false);
-    const [punchType, setPunchType] = useState(null);
-    const store = useSelector((state) => state.store);
+    const [punchType, setPunchType] = useState('punchIn'); // Default
     const navigation = useNavigation();
+    const store = useSelector((state) => state.store);
+
+    // ✅ Get today's date range (startDate = today, endDate = tomorrow)
+    const getDateRange = () => {
+        const today = new Date();
+        const tomorrow = new Date();
+        tomorrow.setDate(today.getDate() + 1);
+
+        const format = (d) => d.toISOString().split('T')[0];
+        return {
+            startDate: format(today),
+            endDate: format(today),
+        };
+    };
+
+    // ✅ Fetch today's last attendance
+    useEffect(() => {
+        const loadPunchStatus = async () => {
+            try {
+                const { startDate, endDate } = getDateRange();
+                const res = await fetchAttendance(agentId, startDate, endDate);
+                const records = res?.data?.data || [];
+
+                if (records.length > 0) {
+                    const lastRecord = records[records.length - 1];
+                    if (lastRecord.status === 'PUNCH IN') {
+                        setPunchType('punchOut');
+                    } else {
+                        setPunchType('punchIn');
+                    }
+                } else {
+                    setPunchType('punchIn');
+                }
+            } catch (error) {
+                console.error('Error fetching attendance:', error);
+            }
+        };
+
+        loadPunchStatus();
+    }, [agentId]);
+
+    // ✅ Request location permission
     useEffect(() => {
         (async () => {
-            const camStatus = await Camera.requestCameraPermission();
-            setHasPermission(camStatus === 'granted');
-
             if (Platform.OS === 'android') {
-                await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION);
-            }
-            const now = new Date();
-            const today = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
-            const agentDoc = await firestore().collection('deliveryAgents').doc(agentId).get();
-            const attendanceRecords = agentDoc.data()?.attendance || [];
-            const todayRecord = attendanceRecords.find(record => record.date === today);
-            if (!todayRecord) {
-                setPunchType('punchIn');
-            } else if (todayRecord && !todayRecord.punchOut) {
-                setPunchType('punchOut');
+                const granted = await PermissionsAndroid.request(
+                    PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+                );
+                setHasPermission(granted === PermissionsAndroid.RESULTS.GRANTED);
             } else {
-                setPunchType('done');
+                const status = await Geolocation.requestAuthorization('whenInUse');
+                setHasPermission(status === 'granted');
             }
         })();
     }, []);
 
-    const getDistanceInMeters = (lat1, lon1, lat2, lon2) => {
-        const toRad = (val) => (val * Math.PI) / 180;
-        const R = 6371e3;
-        const φ1 = toRad(lat1), φ2 = toRad(lat2);
-        const Δφ = toRad(lat2 - lat1), Δλ = toRad(lon2 - lon1);
-        const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return R * c;
-    };
+    // ✅ Fetch current location
+    useEffect(() => {
+        if (!hasPermission) return;
 
-    const uploadToCloudinary = async (fileUri) => {
-        const data = new FormData();
-        data.append('file', {
-            uri: fileUri,
-            name: `${uuid.v4()}.jpg`,
-            type: mime.lookup(fileUri) || 'image/jpeg'
-        });
-        data.append('upload_preset', UPLOAD_PRESET);
+        setLocationLoading(true);
+        Geolocation.getCurrentPosition(
+            (pos) => {
+                const { latitude, longitude } = pos.coords;
+                setLatitude(latitude);
+                setLongitude(longitude);
+                setLocationLoading(false);
+            },
+            (err) => {
+                console.log('Location Error:', err);
+                setShowLocationErrorAlert(true);
+                setLocationLoading(false);
+            },
+            { enableHighAccuracy: true, timeout: 15000 }
+        );
+    }, [hasPermission]);
 
-        const cloudUrl = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
-        const res = await axios.post(cloudUrl, data, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
-
-        return res.data.secure_url;
-    };
-
+    // ✅ Mark Attendance
     const takeAttendance = async () => {
+        if (!hasPermission || !latitude || !longitude) {
+            Alert.alert('Error', 'Location not available.');
+            return;
+        }
+
         setLoading(true);
         try {
-            Geolocation.getCurrentPosition(
-                async (pos) => {
-                    const now = new Date();
-                    const time = now.toLocaleTimeString('en-US', {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        second: '2-digit',
-                        hour12: true
-                    });
-                    const day = String(now.getDate()).padStart(2, '0');
-                    const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
-                    const year = now.getFullYear();
-                    const date = `${day}-${month}-${year}`;
-                    const photo = await camera.current.takePhoto({ flash: 'off' });
-                    const { latitude, longitude } = pos.coords;
+            const status = punchType === 'punchIn' ? 'PUNCH IN' : 'PUNCH OUT';
+            const res = await markAttendance(agentId, status, longitude, latitude);
 
-                    const distance = getDistanceInMeters(latitude, longitude, store.storeDetails.latitude, store.storeDetails.longitude);
-                    if (distance > 500) {
-                        setLoading(false);
-                        return setShowOutOfRangeAlert(true);
-                    }
-
-                    const photoUrl = await uploadToCloudinary('file://' + photo.path);
-                    const attendanceRef = firestore().collection('deliveryAgents').doc(agentId);
-
-                    const agentDoc = await attendanceRef.get();
-                    const attendanceRecords = agentDoc.data()?.attendance || [];
-                    const todayRecordIndex = attendanceRecords.findIndex(rec => rec.date === date);
-
-                    if (punchType === 'punchIn') {
-                        const newEntry = {
-                            date,
-                            punchIn: {
-                                time,
-                                location: { latitude, longitude },
-                                photo: photoUrl
-                            }
-                        };
-                        await attendanceRef.update({
-                            attendance: firestore.FieldValue.arrayUnion(newEntry)
-                        });
-                    } else if (punchType === 'punchOut' && todayRecordIndex > -1) {
-                        attendanceRecords[todayRecordIndex].punchOut = {
-                            time,
-                            location: { latitude, longitude },
-                            photo: photoUrl
-                        };
-                        await attendanceRef.update({ attendance: attendanceRecords });
-                    }
-
-                    setLoading(false);
-                    setShowSuccessAlert(true);
-                    setPunchType('done'); // Mark done to disable further punches
-                },
-                (err) => {
-                    setLoading(false);
-                    console.error(err);
-                    setShowLocationErrorAlert(true);
-                },
-                { enableHighAccuracy: true, timeout: 15000 }
-            );
-        } catch (e) {
-            setLoading(false);
-            console.error(e);
+            if (res.data.success) {
+                setShowSuccessAlert(true);
+                // ✅ Toggle for next time
+                setPunchType(punchType === 'punchIn' ? 'punchOut' : 'punchIn');
+            } else {
+                setShowErrorAlert(true);
+            }
+        } catch (err) {
+            console.error('Mark attendance failed:', err);
             setShowErrorAlert(true);
+        } finally {
+            setLoading(false);
         }
     };
 
-    if (!device || !hasPermission) return <LoaderComponent />;
+    if (!hasPermission) return <LoaderComponent />;
 
     return (
         <View style={styles.container}>
+            {/* ✅ Alerts */}
             <AlertComponent
                 visible={showSuccessAlert}
                 showTitle={true}
-                title={"Success"}
-                message={"Attendance marked successfully!"}
-                okClick={() => {
-                    setShowSuccessAlert(false)
-                    navigation.goBack()
-                }}
-            />
-            <AlertComponent
-                visible={showOutOfRangeAlert}
-                showTitle={true}
-                title={"Out of Range"}
-                message={"You must be within 500m of the store to mark attendance."}
-                okClick={() => setShowOutOfRangeAlert(false)}
+                title={'Success'}
+                message={'Attendance marked successfully!'}
+                okClick={() => setShowSuccessAlert(false)}
             />
             <AlertComponent
                 visible={showLocationErrorAlert}
                 showTitle={true}
-                title={"Location Error"}
-                message={"Failed to get location. Please enable GPS."}
+                title={'Location Error'}
+                message={'Failed to get location. Please enable GPS.'}
                 okClick={() => setShowLocationErrorAlert(false)}
-
             />
             <AlertComponent
                 visible={showErrorAlert}
                 showTitle={true}
-                title={"Error"}
-                message={"Something went wrong during attendance."}
+                title={'Error'}
+                message={'Something went wrong during attendance.'}
                 okClick={() => setShowErrorAlert(false)}
             />
-            <Camera
-                ref={camera}
-                style={styles.camera}
-                device={device}
-                isActive={true}
-                photo={true}
-            />
+
+            {/* ✅ Back Button */}
             <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
                 <Icon name="arrow-back" size={24} color={AppColors.whiteColor} />
             </TouchableOpacity>
 
-            <TouchableOpacity
-                style={styles.button}
-                onPress={takeAttendance}
-                disabled={loading || punchType === 'done'}
-            >
-                {loading ? (
-                    <ActivityIndicator color={AppColors.whiteColor} />
+            {/* ✅ Main Content */}
+            <View style={styles.content}>
+                {locationLoading ? (
+                    <>
+                        <ActivityIndicator color={AppColors.whiteColor} size="large" />
+                        <Text style={styles.infoText}>Fetching location...</Text>
+                    </>
                 ) : (
-                    <Text style={styles.buttonText}>
-                        {punchType === 'punchIn' ? 'Punch In' : punchType === 'punchOut' ? 'Punch Out' : 'Attendance Marked'}
-                    </Text>
+                    <>
+                        <Entypo
+                            name="location"
+                            size={30}
+                            color={AppColors.red}
+                            style={{ marginBottom: 15 }}
+                        />
+                        <Text style={styles.locationText}>
+                            Latitude: {latitude?.toFixed(6)}{'\n'}Longitude: {longitude?.toFixed(6)}
+                        </Text>
+
+                        <Text style={styles.infoText}>
+                            {punchType === 'punchIn' ? 'Ready to Punch In?' : 'Ready to Punch Out?'}
+                        </Text>
+
+                        <TouchableOpacity
+                            style={styles.button}
+                            onPress={takeAttendance}
+                            disabled={loading}
+                        >
+                            {loading ? (
+                                <ActivityIndicator color={AppColors.whiteColor} />
+                            ) : (
+                                <Text style={styles.buttonText}>
+                                    {punchType === 'punchIn' ? 'Punch In' : 'Punch Out'}
+                                </Text>
+                            )}
+                        </TouchableOpacity>
+                    </>
                 )}
-            </TouchableOpacity>
+            </View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#000' },
-    camera: { flex: 1 },
+    container: { flex: 1, backgroundColor: AppColors.appBackgroundColor },
+    content: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    infoText: {
+        color: AppColors.black,
+        fontSize: 16,
+        fontFamily: Fonts.OpenSansSemiBold,
+        marginTop: 30,
+        textAlign: 'center',
+    },
+    locationText: {
+        color: AppColors.black,
+        fontSize: 14,
+        fontFamily: Fonts.OpenSansRegular,
+        textAlign: 'center',
+    },
     button: {
-        position: 'absolute',
-        bottom: 40,
-        alignSelf: 'center',
         backgroundColor: AppColors.primaryColor,
-        padding: 15,
-        borderRadius: 10
+        paddingVertical: 15,
+        paddingHorizontal: 40,
+        borderRadius: 10,
+        marginTop: 40,
     },
     buttonText: {
         color: AppColors.whiteColor,
-        fontSize: 13,
-        fontFamily: Fonts.OpenSansSemiBold
+        fontSize: 14,
+        fontFamily: Fonts.OpenSansSemiBold,
     },
     backButton: {
         position: 'absolute',
@@ -243,6 +251,6 @@ const styles = StyleSheet.create({
         zIndex: 10,
         backgroundColor: AppColors.primaryColor,
         borderRadius: 10,
-        padding: 6
-    }
+        padding: 6,
+    },
 });

@@ -10,7 +10,7 @@ export const fetchIncentives = createAsyncThunk(
                 .collection("incentives")
                 .doc("incentivesValues")
                 .get();
-            console.log("snap", snap)
+            // console.log("snap", snap)
             if (snap.exists) {
                 return snap.data();
             }

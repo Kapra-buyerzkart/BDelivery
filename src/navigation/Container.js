@@ -18,6 +18,9 @@ import ForgotPwdScreen from '../screens/ForgotPwdScreen';
 import OtpVerifyScreen from '../screens/OtpVerifyScreen';
 import OrderDetailsScreen from '../screens/OrderDetailsScreen';
 import ResetPwdScreen from '../screens/ResetPwdScreen';
+import AttendanceHistoryScreen from '../screens/AttendanceHistoryScreen';
+import EarningsNewScreen from '../screens/EarningsNewScreen';
+import OrderDeliveredDetailsScreen from '../screens/OrderDeliveredDetailsScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -78,16 +81,25 @@ const Container = () => {
         <Stack.Screen name="OrderDetails" component={OrderDetailsScreen} options={{
           headerShown: false
         }} />
+        <Stack.Screen name="OrderDeliveredDetails" component={OrderDeliveredDetailsScreen} options={{
+          headerShown: false
+        }} />
         <Stack.Screen name="Wallet" component={WalletScreen} options={{
           headerShown: false
         }} />
         <Stack.Screen name="Attendance" component={AttendanceScreen} options={{
           headerShown: false
         }} />
+        <Stack.Screen name="AttendanceHistory" component={AttendanceHistoryScreen} options={{
+          headerShown: false
+        }} />
         <Stack.Screen name="History" component={HistoryScreen} options={{
           headerShown: false
         }} />
         <Stack.Screen name="Earnings" component={EarningsScreen} options={{
+          headerShown: false
+        }} />
+        <Stack.Screen name="EarningsNew" component={EarningsNewScreen} options={{
           headerShown: false
         }} />
         <Stack.Screen name="Details" component={TaskDetailsScreen} options={{

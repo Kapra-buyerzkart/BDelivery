@@ -24,7 +24,7 @@ import qs from 'qs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AlertComponent from "../components/AlertComponent";
 
-const OrderDetailsScreen = ({ route, navigation }) => {
+const OrderDeliveredDetailsScreen = ({ route, navigation }) => {
     const { orderId, tab } = route.params;
     const [orderDetails, setOrderDetails] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -36,8 +36,7 @@ const OrderDetailsScreen = ({ route, navigation }) => {
 
     useEffect(() => {
         const getOrderDetails = async () => {
-            setLoading(true)
-            console.log('orderId', orderId)
+            // console.log('orderId', orderId)
             try {
                 const response = await fetchOrderDetails(orderId);
                 // console.log("Order details:", response.data);
@@ -174,7 +173,7 @@ const OrderDetailsScreen = ({ route, navigation }) => {
             if (response.status === 200) {
                 setShowOrderDeliveredSuccessAlert(true)
             }
-            console.log("deliveryresponse", response)
+            // console.log("resDeeee", response)
             // Alert.alert("Success", response.data.Message);
         } catch (error) {
             console.error(error);
@@ -372,7 +371,7 @@ const OrderDetailsScreen = ({ route, navigation }) => {
                     </TouchableOpacity>
                 </View>
             )} */}
-            <View style={styles.bottomContainer}>
+            {/* <View style={styles.bottomContainer}>
                 <TouchableOpacity
                     style={[styles.bottomButton, { backgroundColor: AppColors.blue }]}
                     onPress={handleNavigate}
@@ -393,13 +392,13 @@ const OrderDetailsScreen = ({ route, navigation }) => {
                 >
                     <Text style={styles.bottomButtonText}>Call Kapra</Text>
                 </TouchableOpacity>
-            </View>
+            </View> */}
 
         </SafeAreaView>
     );
 };
 
-export default OrderDetailsScreen;
+export default OrderDeliveredDetailsScreen;
 
 const styles = StyleSheet.create({
     container: {

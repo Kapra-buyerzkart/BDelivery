@@ -284,7 +284,7 @@ const MapScreen = ({ navigation }) => {
             const storeRef = firestore().collection('stores').doc('stores');
             const storeDocSnap = await storeRef.get();
             const storesArray = storeDocSnap.data().stores || [];
-            console.log("storeid", storeId)
+            // console.log("storeid", storeId)
             const updatedStores = storesArray.map(store => {
                 if (store.id === storeId) {
                     const existingCompletedTasks = store.completedTasks || [];

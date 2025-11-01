@@ -35,7 +35,7 @@ const DrawerContent = ({ navigation, closeDrawer }) => {
     const [id, setId] = useState(null);
 
     const agent = useSelector((state) => state.agent);
-    console.log('agent', agent)
+    // console.log('agent', agent)
     const handleLogout = async () => {
         try {
             // console.log("11111")
@@ -154,14 +154,27 @@ const DrawerContent = ({ navigation, closeDrawer }) => {
                 <Text style={styles.logoutText}>ATTENDANCE</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => {
+                navigation.navigate("AttendanceHistory", {
+                    agentId: agent.agentId
+                })
+                closeDrawer()
+            }} style={styles.logOut}>
+                <FontAwesome name={'money'} color={AppColors.primaryColor} size={19} />
+                <Text style={styles.logoutText}>ATTENDANCE HISTORY</Text>
+            </TouchableOpacity>
+
+            {/* <TouchableOpacity onPress={() => {
                 navigation.navigate("History")
                 closeDrawer()
             }} style={styles.logOut}>
                 <AntDesign name={'wallet'} color={AppColors.primaryColor} size={19} />
-                <Text style={styles.logoutText}>HISTORY</Text>
-            </TouchableOpacity>
+                <Text style={styles.logoutText}>COMPLETED ORDERS</Text>
+            </TouchableOpacity> */}
+
             <TouchableOpacity onPress={() => {
-                navigation.navigate("Earnings")
+                navigation.navigate("EarningsNew", {
+                    agentId: agent.agentId
+                })
                 closeDrawer()
             }} style={styles.logOut}>
                 <FontAwesome name={'money'} color={AppColors.primaryColor} size={19} />
