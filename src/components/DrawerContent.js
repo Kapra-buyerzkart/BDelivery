@@ -51,7 +51,8 @@ const DrawerContent = ({ navigation, closeDrawer }) => {
             // await AsyncStorage.removeItem('storeId');
             // await AsyncStorage.removeItem('isOnDuty');
             // console.log("logout")
-            const res = await logout();
+            const refreshToken = await AsyncStorage.getItem("refreshToken");
+            const res = await logout(refreshToken);
             AsyncStorage.clear()
             navigation.replace("Login")
         } catch (error) {

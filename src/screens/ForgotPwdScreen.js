@@ -36,6 +36,7 @@ const ForgotPwdScreen = props => {
     const [showMobileNoEmptyAlert, setShowMobileNoEmptyAlert] = useState(false);
     const [showSuccessAlert, setShowSuccessAlert] = useState(false);
     const [showInvalidAlert, setShownvalidAlert] = useState(false);
+    const [otpurlkey, setOtpurlkey] = useState(null);
 
     // const { phoneNumber, setPhoneNumber } = useContext(ItemContext);
 
@@ -47,6 +48,7 @@ const ForgotPwdScreen = props => {
             const response = await forgotPwd(mobileNo);
             const res = response.data;
             if (res?.Data) {
+                setOtpurlkey(res?.Data)
                 setShowSuccessAlert(true)
             } else {
                 setShownvalidAlert(true)
@@ -80,7 +82,8 @@ const ForgotPwdScreen = props => {
                 okClick={() => {
                     setShowSuccessAlert(false)
                     props.navigation.navigate("OtpVerify", {
-                        mobileNo
+                        mobileNo,
+                        otpurlkey
                     })
                 }}
             />

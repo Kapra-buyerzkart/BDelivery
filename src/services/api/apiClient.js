@@ -54,7 +54,7 @@ const refreshAccessToken = async () => {
         if (!refreshToken) return null;
 
         const response = await axios.post(
-            "http://dev.buyerzkart.com/api/api/v2/Auth/Refresh",
+            "https://grocery.kapradaily.com/api/api/v2/Auth/Refresh",
             { refreshTokenId: refreshToken },
             { headers: { "Content-Type": "application/json" } }
         );

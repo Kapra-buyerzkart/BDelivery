@@ -20,18 +20,21 @@ export const fetchProfileDetails = (agentId) => {
     return apiClient.get(`/Auth/Profile/${agentId}`);
 };
 
-export const logout = () => {
-    return apiClient.post("/Auth/Logout");
+export const logout = (refreshToken) => {
+    return apiClient.post("/Auth/Logout", {
+        refreshTokenId: refreshToken
+    });
 };
 
 export const forgotPwd = (mobileNumber) => {
     return apiClient.get(`/Auth/ForgotPassword?mobileNumber=${mobileNumber}`);
 };
 
-export const verifyOtp = (phoneNo, otp) => {
+export const verifyOtp = (phoneNo, otp, otpurlkey) => {
     return apiClient.post("/Auth/VerifyOtp", {
         PhoneNo: phoneNo,
-        Otp: otp
+        Otp: otp,
+        OtpUrlKey: otpurlkey
     });
 };
 
@@ -61,9 +64,8 @@ export const modifyOrderStatus = (orderId, agentId, status) => {
     });
 };
 
-export const getAllOrders = (agentId) => {
-    console.log("pending")
-    return apiClient.get(`/DeliveryAgent/GetAllOrderSuperMarket?agentid=${agentId}`)
+export const getAllOrders = (agentId, status) => {
+    return apiClient.get(`/DeliveryAgent/GetAllOrderSuperMarket?agentid=${agentId}&status=${status}`)
 }
 
 export const fetchOrderDetails = (orderId) => {
@@ -99,11 +101,11 @@ export const fetchEarnings = (DeliveryBoyId, StartDate, EndDate) => {
 }
 
 export const fetchDeliveryAgentAcceptedOrders = (agentId) => {
-    console.log("accepted")
+    // console.log("accepted")
     return apiClient.get(`/DeliveryAgent/GetAllOrderSuperMarketByStatus/?agentid=${agentId}&status=Delivery Agent Accepted`)
 }
 
 export const fetchDeliveredOrders = (agentId) => {
-    console.log("delivered")
+    // console.log("delivered")
     return apiClient.get(`/DeliveryAgent/GetAllOrderSuperMarketByStatus/?agentid=${agentId}&status=Order Delivered`)
 }

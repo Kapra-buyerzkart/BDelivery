@@ -5,24 +5,25 @@ import { AppColors } from '../constants/Colors';
 import moment from 'moment';
 
 const OrderCard = ({
-    task_no,
+    // task_no,
     navigation,
-    id,
-    agentId,
-    pincode,
-    area,
+    // id,
+    // agentId,
+    // pincode,
+    // area,
     type, // 'PENDING' | 'DELIVERING' | 'DELIVERED'
     onAccept,
-    deliveredItems,
-    deliveredDate,
+    // deliveredItems,
+    // deliveredDate,
+    order
 }) => {
 
     const handleViewDetails = () => {
-        navigation.navigate("OrderDetails", { orderId: id });
+        navigation.navigate("OrderDetails", { orderId: order.orderId });
     };
 
     const handleViewDeliveredDetails = () => {
-        navigation.navigate("OrderDeliveredDetails", { orderId: id });
+        navigation.navigate("OrderDeliveredDetails", { orderId: order.orderId });
     };
 
     const renderButton = () => {
@@ -30,7 +31,7 @@ const OrderCard = ({
             return (
                 <TouchableOpacity
                     style={[styles.button, { backgroundColor: AppColors.green }]}
-                    onPress={() => onAccept && onAccept({ orderId: id, taskNo: task_no, agentId })}
+                    onPress={() => onAccept && onAccept({ orderId: order.orderId, orderNumber: order.orderNumber, agentId: order.delAgentId })}
                 >
                     <Text style={styles.buttonText}>Accept</Text>
                 </TouchableOpacity>
@@ -62,17 +63,17 @@ const OrderCard = ({
             {/* Order Header */}
             <View style={styles.orderTitleView}>
                 <Text style={styles.label}>Order No:</Text>
-                <Text style={styles.value}>{task_no}</Text>
+                <Text style={styles.value}>{order.orderNumber}</Text>
             </View>
 
             <View style={styles.orderTitleView}>
                 <Text style={styles.label}>Pincode:</Text>
-                <Text style={styles.value}>{pincode}</Text>
+                <Text style={styles.value}>{order.pincode}</Text>
             </View>
 
             <View style={styles.orderTitleView}>
                 <Text style={styles.label}>Area:</Text>
-                <Text style={styles.value}>{area}</Text>
+                <Text style={styles.value}>{order.area}</Text>
             </View>
 
             {/* Only for DELIVERED */}
@@ -86,9 +87,20 @@ const OrderCard = ({
                     <View style={styles.orderTitleView}>
                         <Text style={styles.label}>Delivered Date:</Text>
                         <Text style={styles.value}>
-                            {deliveredDate ? moment(deliveredDate).format('DD MMM YY') : 'N/A'}
+                            {new Date(order.deliveredOn).toLocaleDateString("en-GB", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "2-digit",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hour12: true,
+                            })}
                         </Text>
                     </View>
+                    {/* <View style={styles.orderTitleView}>
+                        <Text style={styles.label}>Delivered Items:</Text>
+                        <Text style={styles.value}>{order.orderItems.length}</Text>
+                    </View> */}
                 </>
             )}
 

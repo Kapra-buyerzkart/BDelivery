@@ -28,6 +28,7 @@ const OrderDeliveredDetailsScreen = ({ route, navigation }) => {
     const { orderId, tab } = route.params;
     const [orderDetails, setOrderDetails] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [orderDetailsLoading, setOrderDetailsLoading] = useState(true);
     const [currentLocation, setCurrentLocation] = useState(null);
     const [orderCompleteConfirmModdalVisible, setOrderCompleteConfirmModdalVisible] = useState(false)
     const [showOrderDeliveredSuccessAlert, setShowOrderDeliveredSuccessAlert] = useState(false);
@@ -44,7 +45,7 @@ const OrderDeliveredDetailsScreen = ({ route, navigation }) => {
             } catch (error) {
                 console.error("Error fetching order details:", error);
             } finally {
-                setLoading(false);
+                setOrderDetailsLoading(false);
             }
         };
 
@@ -118,7 +119,7 @@ const OrderDeliveredDetailsScreen = ({ route, navigation }) => {
         Linking.openURL(`tel:9605913522`); // Replace with real number
     };
 
-    if (loading) return <LoaderComponent />;
+    if (loading || orderDetailsLoading) return <LoaderComponent />;
 
     // if (!orderDetails)
     //     return (
@@ -264,18 +265,60 @@ const OrderDeliveredDetailsScreen = ({ route, navigation }) => {
                         {orderDetails?.OrderDetails?.PayMethod}
                     </Text>
                     <Text style={styles.detailText}>
-                        <Text style={styles.label}>Order Date: </Text>
+                        <Text style={styles.label}>Status: </Text>
+                        {orderDetails?.OrderDetails?.status}
+                    </Text>
+                    <Text style={styles.detailText}>
+                        <Text style={styles.label}>Order Placed Date and Time: </Text>
                         {new Date(orderDetails?.OrderDetails?.orderDate).toLocaleDateString("en-GB", {
                             day: "2-digit",
                             month: "short",
                             year: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
+                        })}
+                    </Text>
+                    <Text style={styles.detailText}>
+                        <Text style={styles.label}>Delivery Agent Accepted Date and Time: </Text>
+                        {new Date(orderDetails?.OrderDetails?.orderDelBoyAcceptDate).toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
+                        })}
+                    </Text>
+                    <Text style={styles.detailText}>
+                        <Text style={styles.label}>Order Delivered Date and Time: </Text>
+                        {new Date(orderDetails?.OrderDetails?.orderDeliveredDate).toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
                         })}
                     </Text>
                 </View>
 
                 {/* Customer Details */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Customer Details</Text>
+                    <View style={styles.sectionHeaderRow}>
+                        <Text style={styles.sectionTitle}>Customer Details</Text>
+                        <TouchableOpacity
+                            onPress={() => {
+                                if (orderDetails?.ShippingAddress?.phone) {
+                                    Linking.openURL(`tel:${orderDetails.ShippingAddress.phone}`);
+                                } else {
+                                    Alert.alert("Phone number not available");
+                                }
+                            }}
+                        >
+                            <Ionicons name="call" size={20} color={AppColors.red} />
+                        </TouchableOpacity>
+                    </View>
                     <Text style={styles.detailText}>
                         <Text style={styles.label}>Name: </Text>
                         {customerName}
@@ -287,6 +330,10 @@ const OrderDeliveredDetailsScreen = ({ route, navigation }) => {
                     <Text style={styles.detailText}>
                         <Text style={styles.label}>Landmark: </Text>
                         {orderDetails?.ShippingAddress?.landmark}
+                    </Text>
+                    <Text style={styles.detailText}>
+                        <Text style={styles.label}>Phone No: </Text>
+                        {orderDetails?.ShippingAddress?.phone}
                     </Text>
                 </View>
 
@@ -561,5 +608,12 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    sectionHeaderRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        // marginBottom: 8,
+        marginRight: 10
     },
 });

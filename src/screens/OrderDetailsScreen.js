@@ -16,7 +16,7 @@ import {
 import Ionicons from "react-native-vector-icons/Ionicons"; // 👈 Added
 import { AppColors } from "../constants/Colors";
 import { Fonts } from "../constants/Fonts";
-import { completeOrderDelivery, fetchOrderDetails } from "../services/api/api";
+import { completeOrderDelivery, fetchOrderDetails, modifyOrderStatus } from "../services/api/api";
 import LoaderComponent from "../components/LoaderComponent";
 import moment from "moment";
 import Geolocation from "@react-native-community/geolocation";
@@ -28,16 +28,35 @@ const OrderDetailsScreen = ({ route, navigation }) => {
     const { orderId, tab } = route.params;
     const [orderDetails, setOrderDetails] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [orderDetailsLoading, setOrderDetailsLoading] = useState(true);
     const [currentLocation, setCurrentLocation] = useState(null);
     const [orderCompleteConfirmModdalVisible, setOrderCompleteConfirmModdalVisible] = useState(false)
     const [showOrderDeliveredSuccessAlert, setShowOrderDeliveredSuccessAlert] = useState(false);
     const [orderDeliveredSuccessMessage, setOrderDeliveredSuccessMessage] = useState('')
+    const [startConfirmModalVisible, setStartConfirmModalVisible] = useState(false);
+    const [agentId, setAgentId] = useState(null);
 
+    useEffect(() => {
+        const loadAgentId = async () => {
+            try {
+                const storedAgentId = await AsyncStorage.getItem("agentId");
+                if (storedAgentId) {
+                    setAgentId(storedAgentId);
+                } else {
+                    console.warn("No agentId found in AsyncStorage");
+                }
+            } catch (error) {
+                console.error("Error fetching agentId:", error);
+            }
+        };
+
+        loadAgentId();
+    }, []);
 
     useEffect(() => {
         const getOrderDetails = async () => {
-            setLoading(true)
-            console.log('orderId', orderId)
+            // setOrderDetailsLoading(true)
+            // console.log('orderId', orderId)
             try {
                 const response = await fetchOrderDetails(orderId);
                 // console.log("Order details:", response.data);
@@ -45,7 +64,7 @@ const OrderDetailsScreen = ({ route, navigation }) => {
             } catch (error) {
                 console.error("Error fetching order details:", error);
             } finally {
-                setLoading(false);
+                setOrderDetailsLoading(false);
             }
         };
 
@@ -119,7 +138,7 @@ const OrderDetailsScreen = ({ route, navigation }) => {
         Linking.openURL(`tel:9605913522`); // Replace with real number
     };
 
-    if (loading) return <LoaderComponent />;
+    if (loading || orderDetailsLoading) return <LoaderComponent />;
 
     // if (!orderDetails)
     //     return (
@@ -152,7 +171,7 @@ const OrderDetailsScreen = ({ route, navigation }) => {
         setLoading(true)
         setOrderCompleteConfirmModdalVisible(false)
         try {
-            const agentId = await AsyncStorage.getItem('agentId');
+            // const agentId = await AsyncStorage.getItem('agentId');
             const data = qs.stringify({
                 orderId,
                 agentId,
@@ -174,7 +193,7 @@ const OrderDetailsScreen = ({ route, navigation }) => {
             if (response.status === 200) {
                 setShowOrderDeliveredSuccessAlert(true)
             }
-            console.log("deliveryresponse", response)
+            // console.log("deliveryresponse", response)
             // Alert.alert("Success", response.data.Message);
         } catch (error) {
             console.error(error);
@@ -184,6 +203,28 @@ const OrderDetailsScreen = ({ route, navigation }) => {
             setLoading(false)
         }
     };
+
+    const handleStartYesPress = async () => {
+        setStartConfirmModalVisible(false);
+        setLoading(true);
+        try {
+            // const agentId = await AsyncStorage.getItem("agentId");
+            const response = await modifyOrderStatus(orderId, agentId, "Order Dispatched");
+            // console.log('resss', response)
+            if (response.status === 200) {
+                // Re-fetch order details to refresh UI
+                const refreshed = await fetchOrderDetails(orderId);
+                setOrderDetails(refreshed.data.Data);
+            } else {
+                Alert.alert("Failed to update order status");
+            }
+        } catch (error) {
+            console.error(error);
+            Alert.alert("Error", "Failed to start delivery");
+        } finally {
+            setLoading(false);
+        }
+    }
 
     return (
         <SafeAreaView style={styles.container}>
@@ -218,6 +259,38 @@ const OrderDetailsScreen = ({ route, navigation }) => {
                     </View>
                 </View>
             </Modal>
+            {/* Start Confirmation Modal */}
+            <Modal
+                transparent={true}
+                visible={startConfirmModalVisible}
+                animationType="fade"
+                onRequestClose={() => setStartConfirmModalVisible(false)}
+            >
+                <View style={styles.modalBackground}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalText}>
+                            Are you sure to start the delivery of this order?
+                        </Text>
+
+                        <View style={styles.modalButtonContainer}>
+                            <TouchableOpacity
+                                style={[styles.modalButton, { backgroundColor: AppColors.green, marginRight: 5 }]}
+                                onPress={handleStartYesPress}
+                            >
+                                <Text style={styles.okButtonText}>Ok</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.modalButton, { backgroundColor: AppColors.red, marginLeft: 5 }]}
+                                onPress={() => setStartConfirmModalVisible(false)}
+                            >
+                                <Text style={styles.okButtonText}>Cancel</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
             <AlertComponent
                 visible={showOrderDeliveredSuccessAlert}
                 showTitle={false}
@@ -265,18 +338,49 @@ const OrderDetailsScreen = ({ route, navigation }) => {
                         {orderDetails?.OrderDetails?.PayMethod}
                     </Text>
                     <Text style={styles.detailText}>
-                        <Text style={styles.label}>Order Date: </Text>
+                        <Text style={styles.label}>Status: </Text>
+                        {orderDetails?.OrderDetails?.status}
+                    </Text>
+                    <Text style={styles.detailText}>
+                        <Text style={styles.label}>Order Placed Date and Time: </Text>
                         {new Date(orderDetails?.OrderDetails?.orderDate).toLocaleDateString("en-GB", {
                             day: "2-digit",
                             month: "short",
                             year: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
+                        })}
+                    </Text>
+                    <Text style={styles.detailText}>
+                        <Text style={styles.label}>Delivery Agent Accepted Date and Time: </Text>
+                        {new Date(orderDetails?.OrderDetails?.orderDelBoyAcceptDate).toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
                         })}
                     </Text>
                 </View>
 
                 {/* Customer Details */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Customer Details</Text>
+                    <View style={styles.sectionHeaderRow}>
+                        <Text style={styles.sectionTitle}>Customer Details</Text>
+                        <TouchableOpacity
+                            onPress={() => {
+                                if (orderDetails?.ShippingAddress?.phone) {
+                                    Linking.openURL(`tel:${orderDetails.ShippingAddress.phone}`);
+                                } else {
+                                    Alert.alert("Phone number not available");
+                                }
+                            }}
+                        >
+                            <Ionicons name="call" size={20} color={AppColors.red} />
+                        </TouchableOpacity>
+                    </View>
                     <Text style={styles.detailText}>
                         <Text style={styles.label}>Name: </Text>
                         {customerName}
@@ -288,6 +392,10 @@ const OrderDetailsScreen = ({ route, navigation }) => {
                     <Text style={styles.detailText}>
                         <Text style={styles.label}>Landmark: </Text>
                         {orderDetails?.ShippingAddress?.landmark}
+                    </Text>
+                    <Text style={styles.detailText}>
+                        <Text style={styles.label}>Phone No: </Text>
+                        {orderDetails?.ShippingAddress?.phone}
                     </Text>
                 </View>
 
@@ -373,19 +481,31 @@ const OrderDetailsScreen = ({ route, navigation }) => {
                 </View>
             )} */}
             <View style={styles.bottomContainer}>
-                <TouchableOpacity
-                    style={[styles.bottomButton, { backgroundColor: AppColors.blue }]}
-                    onPress={handleNavigate}
-                >
-                    <Text style={styles.bottomButtonText}>Navigate</Text>
-                </TouchableOpacity>
+                {orderDetails?.OrderDetails?.status === "Delivery Agent Accepted" && (
+                    <TouchableOpacity
+                        style={[styles.bottomButton, { backgroundColor: AppColors.green }]}
+                        onPress={() => setStartConfirmModalVisible(true)}
+                    >
+                        <Text style={styles.bottomButtonText}>Start</Text>
+                    </TouchableOpacity>
+                )}
+                {orderDetails?.OrderDetails?.status === "Order Dispatched" && (
+                    <>
+                        <TouchableOpacity
+                            style={[styles.bottomButton, { backgroundColor: AppColors.blue }]}
+                            onPress={handleNavigate}
+                        >
+                            <Text style={styles.bottomButtonText}>Navigate</Text>
+                        </TouchableOpacity>
 
-                <TouchableOpacity
-                    style={[styles.bottomButton, { backgroundColor: AppColors.green }]}
-                    onPress={handleDeliverOrder}
-                >
-                    <Text style={styles.bottomButtonText}>Deliver Order</Text>
-                </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.bottomButton, { backgroundColor: AppColors.orange }]}
+                            onPress={handleDeliverOrder}
+                        >
+                            <Text style={styles.bottomButtonText}>Deliver Order</Text>
+                        </TouchableOpacity>
+                    </>
+                )}
 
                 <TouchableOpacity
                     style={[styles.bottomButton, { backgroundColor: AppColors.red }]}
@@ -562,5 +682,12 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    sectionHeaderRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        // marginBottom: 8,
+        marginRight: 10
     },
 });

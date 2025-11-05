@@ -10,7 +10,7 @@ import AlertComponent from '../components/AlertComponent';
 const { width } = Dimensions.get('window');
 
 const OtpVerifyScreen = (props) => {
-    const { mobileNo } = props.route.params;
+    const { mobileNo, otpurlkey } = props.route.params;
     const [otp, setOtp] = useState(null);
     const [loading, setLoading] = useState(false);
     const [showOtpEmptyAlert, setShowOtpEmptyAlert] = useState(false)
@@ -29,7 +29,7 @@ const OtpVerifyScreen = (props) => {
         setLoading(true);
         try {
             // console.log(mobileNo)
-            const response = await verifyOtp(mobileNo, otp);
+            const response = await verifyOtp(mobileNo, otp, otpurlkey);
             const res = response.data;
 
             if (res?.AgentId) {
