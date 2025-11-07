@@ -51,6 +51,7 @@ export default function AttendanceScreen() {
     // ✅ Fetch today's last attendance
     useEffect(() => {
         const loadPunchStatus = async () => {
+            setLoading(true)
             try {
                 const { startDate, endDate } = getDateRange();
                 const res = await fetchAttendance(agentId, startDate, endDate);
@@ -68,6 +69,8 @@ export default function AttendanceScreen() {
                 }
             } catch (error) {
                 console.error('Error fetching attendance:', error);
+            } finally {
+                setLoading(false)
             }
         };
 
@@ -137,7 +140,7 @@ export default function AttendanceScreen() {
         }
     };
 
-    if (!hasPermission) return <LoaderComponent />;
+    if (!hasPermission || loading) return <LoaderComponent />;
 
     return (
         <View style={styles.container}>
