@@ -128,6 +128,21 @@ export default function AttendanceHistoryScreen(props) {
         );
     };
 
+    const renderDatePicker = (type) => {
+        const value = type === "start" ? startDate : endDate;
+        const onChange = type === "start" ? handleStartDateChange : handleEndDateChange;
+
+        return (
+            <DateTimePicker
+                value={value}
+                mode="date"
+                display={Platform.OS === "ios" ? "spinner" : "default"}
+                onChange={onChange}
+                maximumDate={today}
+            />
+        );
+    };
+
     return (
         <View style={styles.container}>
             <TouchableOpacity
@@ -162,7 +177,7 @@ export default function AttendanceHistoryScreen(props) {
                 </TouchableOpacity>
             </View>
 
-            {showStartPicker && (
+            {/* {showStartPicker && (
                 <DateTimePicker
                     value={startDate}
                     mode="date"
@@ -179,7 +194,10 @@ export default function AttendanceHistoryScreen(props) {
                     onChange={handleEndDateChange}
                     maximumDate={today}
                 />
-            )}
+            )} */}
+
+            {showStartPicker && renderDatePicker("start")}
+            {showEndPicker && renderDatePicker("end")}
 
             {/* Loader */}
             {loading ? (
