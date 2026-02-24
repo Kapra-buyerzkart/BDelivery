@@ -123,6 +123,10 @@ export default function AttendanceScreen() {
         setLoading(true);
         try {
             const status = punchType === 'punchIn' ? 'PUNCH IN' : 'PUNCH OUT';
+            console.log('agentId', agentId)
+            console.log('status', status)
+            console.log('longitude', longitude)
+            console.log('latitude', latitude)
             const res = await markAttendance(agentId, status, longitude, latitude);
 
             if (res.data.success) {

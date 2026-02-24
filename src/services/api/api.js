@@ -21,6 +21,7 @@ export const fetchProfileDetails = (agentId) => {
 };
 
 export const logout = (refreshToken) => {
+    console.log('refreshToken', refreshToken)
     return apiClient.post("/Auth/Logout", {
         refreshTokenId: refreshToken
     });
@@ -65,6 +66,8 @@ export const modifyOrderStatus = (orderId, agentId, status) => {
 };
 
 export const getAllOrders = (agentId, status) => {
+    console.log("getAllOrdersgetAllOrders", agentId)
+    console.log("getAllOrdersgetAllOrders", status)
     return apiClient.get(`/DeliveryAgent/GetAllOrderSuperMarket?agentid=${agentId}&status=${status}`)
 }
 
@@ -84,6 +87,10 @@ export const completeOrderDelivery = (orderId, delAgentId, status, signImage, de
 };
 
 export const markAttendance = (DeliveryBoyId, Status, longitude, latitude) => {
+    console.log('DeliveryBoyId', DeliveryBoyId)
+    console.log('Status', Status)
+    console.log('longitude', longitude)
+    console.log('latitude', latitude)
     return apiClient.post("/DeliveryAgent/attendance", {
         DeliveryBoyId,
         Status,
@@ -93,6 +100,8 @@ export const markAttendance = (DeliveryBoyId, Status, longitude, latitude) => {
 };
 
 export const fetchAttendance = (DeliveryBoyId, StartDate, EndDate) => {
+    console.log("StartDate", StartDate)
+    console.log('EndDate', EndDate)
     return apiClient.get(`/DeliveryAgent/attendanceDateRange?deliveryBoyId=${DeliveryBoyId}&startDate=${StartDate}&endDate=${EndDate}`);
 }
 
